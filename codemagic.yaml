@@ -1,38 +1,43 @@
-
 workflows:
-  ios-workflow:
-    name: TandaFacil iOS Workflow
-    instance_type: mac_mini_m1
-    max_build_duration: 60
-    environment:
-      ios_signing:
-        distribution_type: app_store
-        bundle_identifier: com.tandafacil.app2026
-      vars:
-        XCODE_WORKSPACE: "ios/App/App.xcworkspace"
-        XCODE_SCHEME: "App"
-      xcode: 15.2
-      cocoapods: default
-    scripts:
-      - name: Set up Node
-        script: |
-          npm install -g npm
-          npm install
-      - name: Install Capacitor
-        script: |
-          npm install
-          npx cap add ios || true
-          npx cap copy ios
-          npx cap sync ios
-      - name: Install CocoaPods
-        script: |
-          cd ios/App && pod install && cd ../..
-    artifacts:
-      - ios/App/build/ipa/*.ipa
-    publishing:
-      app_store_connect:
-        api_key: $APP_STORE_CONNECT_PRIVATE_KEY
-        key_id: $APP_STORE_CONNECT_KEY_IDENTIFIER
-        issuer_id: $APP_STORE_CONNECT_ISSUER_ID
-        submit_to_testflight: true
-        submit_to_app_store: false
+ios-workflow:
+name: TandaFacil iOS Build
+instance_type: mac_mini_m2
+max_build_duration: 60
+integrations:
+app_store_connect: Codemagic
+environment:
+vars:
+XCODE_PROJECT: "ios/App/App.xcodeproj"
+XCODE_SCHEME: "App"
+BUNDLE_ID: "com.tandafacil.app2026"
+node: 20.9.0
+triggering:
+events:
+- push
+branch_patterns:
+- pattern: main
+include: true
+scripts:
+- name: Install dependencies
+script: |
+npm install
+npx cap sync ios
+cd ios/App
+pod install --repo-update || pod install
+- name: Set up automatic code signing
+script: |
+app-store-connect fetch-signing-files $BUNDLE_ID --type IOS_APP_STORE --create
+app-store-connect fetch-signing-files $BUNDLE_ID --type IOS_APP_DEVELOPMENT --create
+keychain initialize
+keychain add-certificates
+xcode-project use-profiles
+- name: Build IPA for App Store
+script: |
+xcode-project build-ipa --project "$XCODE_PROJECT" --scheme "$XCODE_SCHEME"
+artifacts:
+- build/ios/ipa/*.ipa
+- /tmp/xcodebuild_logs/*.log
+publishing:
+app_store_connect:
+api_key: Codemagic
+submit_to_testflight: false
