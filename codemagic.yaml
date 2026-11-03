@@ -1,0 +1,38 @@
+
+workflows:
+  ios-workflow:
+    name: TandaFacil iOS Workflow
+    instance_type: mac_mini_m1
+    max_build_duration: 60
+    environment:
+      ios_signing:
+        distribution_type: app_store
+        bundle_identifier: com.tandafacil.app2026
+      vars:
+        XCODE_WORKSPACE: "ios/App/App.xcworkspace"
+        XCODE_SCHEME: "App"
+      xcode: 15.2
+      cocoapods: default
+    scripts:
+      - name: Set up Node
+        script: |
+          npm install -g npm
+          npm install
+      - name: Install Capacitor
+        script: |
+          npm install
+          npx cap add ios || true
+          npx cap copy ios
+          npx cap sync ios
+      - name: Install CocoaPods
+        script: |
+          cd ios/App && pod install && cd ../..
+    artifacts:
+      - ios/App/build/ipa/*.ipa
+    publishing:
+      app_store_connect:
+        api_key: $APP_STORE_CONNECT_PRIVATE_KEY
+        key_id: $APP_STORE_CONNECT_KEY_IDENTIFIER
+        issuer_id: $APP_STORE_CONNECT_ISSUER_ID
+        submit_to_testflight: true
+        submit_to_app_store: false

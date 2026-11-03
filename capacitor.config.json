@@ -1,0 +1,9 @@
+{
+  "appId": "com.tandafacil.app2026",
+  "appName": "Tanda Facil - Tandas y Cundinas",
+  "webDir": ".",
+  "bundledWebRuntime": false,
+  "ios": {
+    "contentInset": "always"
+  }
+}
