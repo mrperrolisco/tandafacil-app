@@ -30,13 +30,15 @@ workflows:
         script: |
           cd ios/App
           pod install
-      - name: Setup code signing CREATE NEW
+      - name: Setup code signing NEW CERT
         script: |
+          rm -rf ~/Library/MobileDevice/Provisioning\ Profiles/* || true
           keychain initialize
           app-store-connect fetch-signing-files $BUNDLE_ID --type IOS_APP_STORE --create --verbose
           keychain add-certificates
+          ls -lh ~/Library/MobileDevice/Provisioning\ Profiles/
           xcode-project use-profiles --project $XCODE_PROJECT --verbose
-      - name: Build IPA
+      - name: Build IPA with auto provisioning
         script: |
           xcode-project build-ipa --project $XCODE_PROJECT --scheme $XCODE_SCHEME --verbose
     artifacts:
