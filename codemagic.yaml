@@ -16,6 +16,11 @@ workflows:
         script: |
           npm install
           npm install -D @capacitor/cli @capacitor/core @capacitor/ios
+      - name: Fix webDir and prepare www
+        script: |
+          python3 -c "import json; p='capacitor.config.json'; d=json.load(open(p)); d['webDir']='www'; json.dump(d, open(p,'w'), indent=2)"
+          mkdir -p www
+          cp index.html www/index.html
       - name: Add and Sync iOS platform
         script: |
           if [ ! -d "ios" ]; then
