@@ -30,9 +30,26 @@ workflows:
         script: |
           cd ios/App
           pod install
-      - name: Setup code signing CREATE NEW
+      - name: DELETE OLD certs and CREATE NEW
         script: |
           keychain initialize
+          echo "Listing old distribution certs..."
+          app-store-connect certificates list --type IOS_DISTRIBUTION --verbose || true
+          echo "Deleting old certs without private key..."
+          app-store-connect certificates list --type IOS_DISTRIBUTION --format json 2>/dev/null | python3 -c "
+          import json,sys
+          try:
+              data=json.load(sys.stdin)
+              for c in data:
+                  print(c['id'])
+          except: pass
+          " | while read certid; do
+            if [ ! -z "$certid" ]; then
+              echo "Deleting cert $certid"
+              app-store-connect certificates delete $certid --verbose || true
+            fi
+          done
+          echo "Now fetching new signing files with CREATE..."
           app-store-connect fetch-signing-files $BUNDLE_ID --type IOS_APP_STORE --create --verbose
           keychain add-certificates
           ls -lh ~/Library/MobileDevice/Provisioning\ Profiles/
