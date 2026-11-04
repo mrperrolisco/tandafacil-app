@@ -12,25 +12,23 @@ workflows:
         BUNDLE_ID: com.tandafacil.app2026
       node: 20
     scripts:
-      - name: Install npm
+      - name: Install dependencies
         script: npm install
-      - name: Sync iOS
+      - name: Sync iOS project
         script: npx cap sync ios
-      - name: Install Pods
+      - name: Install CocoaPods
         script: |
           cd ios/App
           pod install --repo-update
-      - name: Setup signing
+      - name: Fetch signing files
         script: |
           app-store-connect fetch-signing-files $BUNDLE_ID --type IOS_APP_STORE --create
           keychain initialize
           keychain add-certificates
           xcode-project use-profiles
       - name: Build IPA
-        script: xcode-project build-ipa --project $XCODE_PROJECT --scheme $XCODE_SCHEME
+        script: |
+          xcode-project build-ipa --project $XCODE_PROJECT --scheme $XCODE_SCHEME
     artifacts:
       - build/ios/ipa/*.ipa
-    publishing:
-      app_store_connect:
-        api_key: Codemagic
-        submit_to_testflight: false
+      - /tmp/xcodebuild_logs/*.log
