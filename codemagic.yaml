@@ -18,6 +18,7 @@ workflows:
         script: |
           rm -rf node_modules package-lock.json
           npm install
+          ls node_modules/.bin/ | grep cap
       - name: Fix webDir and prepare www
         script: |
           python3 -c "import json; p='capacitor.config.json'; d=json.load(open(p)); d['webDir']='www'; json.dump(d, open(p,'w'), indent=2)"
@@ -26,8 +27,8 @@ workflows:
       - name: Add and Sync iOS platform
         script: |
           rm -rf ios
-          npx cap add ios
-          npx cap copy ios
+          ./node_modules/.bin/cap add ios
+          ./node_modules/.bin/cap copy ios
       - name: Install CocoaPods
         script: |
           cd ios/App
