@@ -13,9 +13,12 @@ workflows:
       node: 20
     scripts:
       - name: Install dependencies
-        script: npm install
+        script: |
+          npm install
+          npm install -D @capacitor/cli
       - name: Sync iOS project
-        script: npx cap sync ios
+        script: |
+          npx cap sync ios || ./node_modules/.bin/cap sync ios || npx @capacitor/cli sync ios
       - name: Install CocoaPods
         script: |
           cd ios/App
