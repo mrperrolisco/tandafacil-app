@@ -15,20 +15,18 @@ workflows:
       node: 20
     scripts:
       - name: Install dependencies
-        script: |
-          rm -rf node_modules package-lock.json
-          npm install
-          ls node_modules/.bin/ | grep cap
+        script: npm install
       - name: Fix webDir and prepare www
         script: |
-          python3 -c "import json; p='capacitor.config.json'; d=json.load(open(p)); d['webDir']='www'; json.dump(d, open(p,'w'), indent=2)"
+          python3 -c "import json; p='capacitor.config.json'; d=json.load(open(p)); d['appId']='com.tandafacil.app2026'; d['webDir']='www'; json.dump(d, open(p,'w'), indent=2)"
+          cat capacitor.config.json
           mkdir -p www
           cp index.html www/index.html
       - name: Add and Sync iOS platform
         script: |
           rm -rf ios
-          ./node_modules/.bin/cap add ios
-          ./node_modules/.bin/cap copy ios
+          npx cap add ios
+          npx cap copy ios
       - name: Install CocoaPods
         script: |
           cd ios/App
@@ -38,7 +36,7 @@ workflows:
           app-store-connect fetch-signing-files $BUNDLE_ID --type IOS_APP_STORE --create
           keychain initialize
           keychain add-certificates
-          xcode-project use-profiles
+          xcode-project use-profiles --project $XCODE_PROJECT
       - name: Build IPA
         script: |
           xcode-project build-ipa --project $XCODE_PROJECT --scheme $XCODE_SCHEME
