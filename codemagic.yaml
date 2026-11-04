@@ -16,30 +16,32 @@ workflows:
     scripts:
       - name: Install dependencies
         script: npm install
-      - name: Fix webDir and prepare www
+      - name: Fix config and prepare www
         script: |
           python3 -c "import json; p='capacitor.config.json'; d=json.load(open(p)); d['appId']='com.tandafacil.app2026'; d['webDir']='www'; json.dump(d, open(p,'w'), indent=2)"
           cat capacitor.config.json
           mkdir -p www
           cp index.html www/index.html
-      - name: Add and Sync iOS platform
+      - name: Add iOS platform
         script: |
           rm -rf ios
           npx cap add ios
           npx cap copy ios
-      - name: Install CocoaPods
+      - name: Install Pods
         script: |
           cd ios/App
           pod install
-      - name: Fetch signing files
+      - name: Setup code signing
         script: |
-          app-store-connect fetch-signing-files $BUNDLE_ID --type IOS_APP_STORE --create
           keychain initialize
+          app-store-connect fetch-signing-files $BUNDLE_ID --type IOS_APP_STORE --create --verbose
           keychain add-certificates
-          xcode-project use-profiles --project $XCODE_PROJECT
+          ls -lh ~/Library/MobileDevice/Provisioning\ Profiles/
+          xcode-project use-profiles --project $XCODE_PROJECT --verbose
+          grep -A2 "PROVISIONING_PROFILE" $XCODE_PROJECT/project.pbxproj | head -20
       - name: Build IPA
         script: |
-          xcode-project build-ipa --project $XCODE_PROJECT --scheme $XCODE_SCHEME
+          xcode-project build-ipa --project $XCODE_PROJECT --scheme $XCODE_SCHEME --verbose
     artifacts:
       - build/ios/ipa/*.ipa
       - /tmp/xcodebuild_logs/*.log
