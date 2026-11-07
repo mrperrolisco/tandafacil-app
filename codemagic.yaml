@@ -10,6 +10,8 @@ workflows:
         XCODE_PROJECT: ios/App/App.xcodeproj
         XCODE_SCHEME: App
         BUNDLE_ID: com.tandafacil.app2026
+        KEY_ID: BW85VHCQXV
+        ISSUER_ID: 0633da7c-40fc-4ba4-be11-8f6cf2c74b3f
       xcode: 16.2
       cocoapods: 1.16.2
       node: 20
@@ -46,13 +48,14 @@ workflows:
       - name: Build IPA Automatic
         script: |
           keychain initialize
-          # Buscar la llave .p8 de Codemagic
-          KEY_PATH=$(find $HOME -name "AuthKey_*.p8" | head -1)
-          echo "Key: $KEY_PATH"
-          echo "KeyID: $APP_STORE_CONNECT_API_KEY_KEY_IDENTIFIER Issuer: $APP_STORE_CONNECT_API_KEY_ISSUER_ID"
-          # Archive con provisionamiento automático usando tu API Key Admin BW85VHCQXV
-          xcodebuild -project $XCODE_PROJECT -scheme $XCODE_SCHEME -configuration Release -archivePath $HOME/build/App.xcarchive archive -allowProvisioningUpdates -authenticationKeyPath "$KEY_PATH" -authenticationKeyID "$APP_STORE_CONNECT_API_KEY_KEY_IDENTIFIER" -authenticationKeyIssuerID "$APP_STORE_CONNECT_API_KEY_ISSUER_ID" CODE_SIGN_STYLE=Automatic
-          # ExportOptions para App Store
+          # Crear archivo .p8 desde la variable de Codemagic
+          echo "$APP_STORE_CONNECT_PRIVATE_KEY" > /tmp/AuthKey.p8
+          if [ ! -s /tmp/AuthKey.p8 ]; then echo "$APP_STORE_CONNECT_API_KEY_PRIVATE_KEY" > /tmp/AuthKey.p8; fi
+          if [ ! -s /tmp/AuthKey.p8 ]; then find $HOME -name "AuthKey_*.p8" -exec cp {} /tmp/AuthKey.p8 \; 2>/dev/null || true; fi
+          ls -lh /tmp/AuthKey.p8
+          echo "Using KeyID=$KEY_ID Issuer=$ISSUER_ID"
+          # Archive con firma automática
+          xcodebuild -project $XCODE_PROJECT -scheme $XCODE_SCHEME -configuration Release -archivePath $HOME/build/App.xcarchive archive -allowProvisioningUpdates -authenticationKeyPath /tmp/AuthKey.p8 -authenticationKeyID "$KEY_ID" -authenticationKeyIssuerID "$ISSUER_ID" CODE_SIGN_STYLE=Automatic
           cat > /tmp/ExportOptions.plist << 'PLIST'
           <?xml version="1.0" encoding="UTF-8"?>
           <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
@@ -66,7 +69,7 @@ workflows:
           </dict>
           </plist>
           PLIST
-          xcodebuild -exportArchive -archivePath $HOME/build/App.xcarchive -exportPath $HOME/build/ipa -exportOptionsPlist /tmp/ExportOptions.plist -allowProvisioningUpdates -authenticationKeyPath "$KEY_PATH" -authenticationKeyID "$APP_STORE_CONNECT_API_KEY_KEY_IDENTIFIER" -authenticationKeyIssuerID "$APP_STORE_CONNECT_API_KEY_ISSUER_ID"
+          xcodebuild -exportArchive -archivePath $HOME/build/App.xcarchive -exportPath $HOME/build/ipa -exportOptionsPlist /tmp/ExportOptions.plist -allowProvisioningUpdates -authenticationKeyPath /tmp/AuthKey.p8 -authenticationKeyID "$KEY_ID" -authenticationKeyIssuerID "$ISSUER_ID"
           ls -lh $HOME/build/ipa/
           mkdir -p build/ios/ipa
           cp $HOME/build/ipa/*.ipa build/ios/ipa/ || true
