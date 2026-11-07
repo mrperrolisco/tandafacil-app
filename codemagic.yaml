@@ -33,7 +33,7 @@ workflows:
       - name: Fetch Signing Files
         script: |
           keychain initialize
-          app-store-connect fetch-signing-files $BUNDLE_ID --type IOS_APP_STORE --create --save
+          app-store-connect fetch-signing-files $BUNDLE_ID --type IOS_APP_STORE --create
           keychain add-certificates
           xcode-project use-profiles
           ls -lh ~/Library/MobileDevice/Provisioning\ Profiles/
