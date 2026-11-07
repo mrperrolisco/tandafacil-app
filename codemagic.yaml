@@ -9,7 +9,7 @@ workflows:
       vars:
         XCODE_PROJECT: ios/App/App.xcodeproj
         XCODE_SCHEME: App
-        BUNDLE_ID: com.tandafacil.app2026
+        BUNDLE_ID: com.tandafacil.app
       xcode: 16.2
       cocoapods: 1.16.2
       node: 20
