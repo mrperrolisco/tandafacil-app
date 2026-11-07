@@ -39,24 +39,7 @@ workflows:
           security find-identity -v -p codesigning
       - name: Build IPA
         script: |
-          xcodebuild -project $XCODE_PROJECT -scheme $XCODE_SCHEME -configuration Release -archivePath $HOME/build/App.xcarchive archive
-          cat > /tmp/ExportOptions.plist << 'PLIST'
-          <?xml version="1.0" encoding="UTF-8"?>
-          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
-          <plist version="1.0">
-          <dict>
-            <key>method</key><string>app-store-connect</string>
-            <key>provisioningProfiles</key><dict><key>com.tandafacil.app2026</key><string>TandaFacil Profile</string></dict>
-            <key>signingStyle</key><string>manual</string>
-            <key>uploadBitcode</key><false/>
-            <key>uploadSymbols</key><true/>
-          </dict>
-          </plist>
-          PLIST
-          xcodebuild -exportArchive -archivePath $HOME/build/App.xcarchive -exportPath $HOME/build/ipa -exportOptionsPlist /tmp/ExportOptions.plist
-          ls -lh $HOME/build/ipa/
-          mkdir -p build/ios/ipa
-          cp $HOME/build/ipa/*.ipa build/ios/ipa/ || true
+          xcode-project build-ipa --project $XCODE_PROJECT --scheme $XCODE_SCHEME --verbose
     artifacts:
       - build/ios/ipa/*.ipa
-      - $HOME/build/ipa/*.ipa
+      - /tmp/xcodebuild_logs/*.log
