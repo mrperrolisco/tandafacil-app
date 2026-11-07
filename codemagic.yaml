@@ -30,19 +30,46 @@ workflows:
         script: |
           cd ios/App
           pod install
-      - name: Create Certificate with CSR and Profile
+      - name: Enable Automatic Signing
+        script: |
+          python3 << 'PY'
+          import re
+          p = "ios/App/App.xcodeproj/project.pbxproj"
+          c = open(p).read()
+          c = c.replace("CODE_SIGN_STYLE = Manual;", "CODE_SIGN_STYLE = Automatic;")
+          c = re.sub(r'PROVISIONING_PROFILE_SPECIFIER = .*?;', '', c)
+          c = re.sub(r'PROVISIONING_PROFILE = .*?;', '', c)
+          c = re.sub(r'DEVELOPMENT_TEAM = .*?;', '', c)
+          open(p,'w').write(c)
+          print("Automatic signing ON")
+          PY
+      - name: Build IPA Automatic
         script: |
           keychain initialize
-          openssl genrsa -out /tmp/private.key 2048
-          openssl req -new -key /tmp/private.key -out /tmp/cert.csr -subj "/CN=TandaFacil Distribution/O=Pedro Gonzalez/C=MX"
-          app-store-connect certificates create --type IOS_DISTRIBUTION --csr /tmp/cert.csr --verbose
-          sleep 5
-          app-store-connect fetch-signing-files $BUNDLE_ID --type IOS_APP_STORE --create --verbose
-          keychain add-certificates
-          xcode-project use-profiles --project $XCODE_PROJECT --verbose
-      - name: Build IPA
-        script: |
-          xcode-project build-ipa --project $XCODE_PROJECT --scheme $XCODE_SCHEME --verbose
+          # Buscar la llave .p8 de Codemagic
+          KEY_PATH=$(find $HOME -name "AuthKey_*.p8" | head -1)
+          echo "Key: $KEY_PATH"
+          echo "KeyID: $APP_STORE_CONNECT_API_KEY_KEY_IDENTIFIER Issuer: $APP_STORE_CONNECT_API_KEY_ISSUER_ID"
+          # Archive con provisionamiento automático usando tu API Key Admin BW85VHCQXV
+          xcodebuild -project $XCODE_PROJECT -scheme $XCODE_SCHEME -configuration Release -archivePath $HOME/build/App.xcarchive archive -allowProvisioningUpdates -authenticationKeyPath "$KEY_PATH" -authenticationKeyID "$APP_STORE_CONNECT_API_KEY_KEY_IDENTIFIER" -authenticationKeyIssuerID "$APP_STORE_CONNECT_API_KEY_ISSUER_ID" CODE_SIGN_STYLE=Automatic
+          # ExportOptions para App Store
+          cat > /tmp/ExportOptions.plist << 'PLIST'
+          <?xml version="1.0" encoding="UTF-8"?>
+          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+          <plist version="1.0">
+          <dict>
+            <key>method</key><string>app-store-connect</string>
+            <key>provisioningProfiles</key><dict/>
+            <key>signingStyle</key><string>automatic</string>
+            <key>uploadBitcode</key><false/>
+            <key>uploadSymbols</key><true/>
+          </dict>
+          </plist>
+          PLIST
+          xcodebuild -exportArchive -archivePath $HOME/build/App.xcarchive -exportPath $HOME/build/ipa -exportOptionsPlist /tmp/ExportOptions.plist -allowProvisioningUpdates -authenticationKeyPath "$KEY_PATH" -authenticationKeyID "$APP_STORE_CONNECT_API_KEY_KEY_IDENTIFIER" -authenticationKeyIssuerID "$APP_STORE_CONNECT_API_KEY_ISSUER_ID"
+          ls -lh $HOME/build/ipa/
+          mkdir -p build/ios/ipa
+          cp $HOME/build/ipa/*.ipa build/ios/ipa/ || true
     artifacts:
       - build/ios/ipa/*.ipa
-      - /tmp/xcodebuild_logs/*.log
+      - $HOME/build/ipa/*.ipa
