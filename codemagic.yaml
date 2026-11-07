@@ -30,17 +30,21 @@ workflows:
         script: |
           cd ios/App
           pod install
-      - name: Setup code signing - Codemagic Official
+      - name: Setup code signing with Private Key
         script: |
           keychain initialize
-          # Listar y borrar certs viejos sin llave privada
-          app-store-connect certificates list --type IOS_DISTRIBUTION || true
-          # Crear certificado y perfil nuevo con la integración Codemagic (sin .p8 manual)
-          app-store-connect fetch-signing-files $BUNDLE_ID --type IOS_APP_STORE --create --verbose
+          # 1. Generar llave privada nueva local
+          openssl genrsa -out /tmp/private.key 2048
+          echo "Private key creada"
+          ls -lh /tmp/private.key
+          # 2. Usar esa llave para crear certificado + perfil con Codemagic
+          app-store-connect fetch-signing-files $BUNDLE_ID --type IOS_APP_STORE --create --certificate-key @file:/tmp/private.key --verbose
+          # 3. Importar certificados con su llave privada
           keychain add-certificates
-          echo "=== IDENTIDADES ==="
+          # 4. Verificar que SÍ hay certificado y perfil
+          echo "=== IDENTIDADES (debe salir 1) ==="
           security find-identity -v -p codesigning
-          echo "=== PERFILES ==="
+          echo "=== PERFILES (debe salir 1 archivo .mobileprovision) ==="
           ls -lh ~/Library/MobileDevice/Provisioning\ Profiles/
           xcode-project use-profiles --project $XCODE_PROJECT --verbose
       - name: Build IPA
