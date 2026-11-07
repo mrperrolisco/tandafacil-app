@@ -10,8 +10,6 @@ workflows:
         XCODE_PROJECT: ios/App/App.xcodeproj
         XCODE_SCHEME: App
         BUNDLE_ID: com.tandafacil.app2026
-        KEY_ID: BW85VHCQXV
-        ISSUER_ID: 0633da7c-40fc-4ba4-be11-8f6cf2c74b3f
       xcode: 16.2
       cocoapods: 1.16.2
       node: 20
@@ -32,47 +30,22 @@ workflows:
         script: |
           cd ios/App
           pod install
-      - name: Enable Automatic Signing
-        script: |
-          python3 << 'PY'
-          import re
-          p = "ios/App/App.xcodeproj/project.pbxproj"
-          c = open(p).read()
-          c = c.replace("CODE_SIGN_STYLE = Manual;", "CODE_SIGN_STYLE = Automatic;")
-          c = re.sub(r'PROVISIONING_PROFILE_SPECIFIER = .*?;', '', c)
-          c = re.sub(r'PROVISIONING_PROFILE = .*?;', '', c)
-          c = re.sub(r'DEVELOPMENT_TEAM = .*?;', '', c)
-          open(p,'w').write(c)
-          print("Automatic signing ON")
-          PY
-      - name: Build IPA Automatic
+      - name: Setup code signing - Codemagic Official
         script: |
           keychain initialize
-          # Crear archivo .p8 desde la variable de Codemagic
-          echo "$APP_STORE_CONNECT_PRIVATE_KEY" > /tmp/AuthKey.p8
-          if [ ! -s /tmp/AuthKey.p8 ]; then echo "$APP_STORE_CONNECT_API_KEY_PRIVATE_KEY" > /tmp/AuthKey.p8; fi
-          if [ ! -s /tmp/AuthKey.p8 ]; then find $HOME -name "AuthKey_*.p8" -exec cp {} /tmp/AuthKey.p8 \; 2>/dev/null || true; fi
-          ls -lh /tmp/AuthKey.p8
-          echo "Using KeyID=$KEY_ID Issuer=$ISSUER_ID"
-          # Archive con firma automática
-          xcodebuild -project $XCODE_PROJECT -scheme $XCODE_SCHEME -configuration Release -archivePath $HOME/build/App.xcarchive archive -allowProvisioningUpdates -authenticationKeyPath /tmp/AuthKey.p8 -authenticationKeyID "$KEY_ID" -authenticationKeyIssuerID "$ISSUER_ID" CODE_SIGN_STYLE=Automatic
-          cat > /tmp/ExportOptions.plist << 'PLIST'
-          <?xml version="1.0" encoding="UTF-8"?>
-          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
-          <plist version="1.0">
-          <dict>
-            <key>method</key><string>app-store-connect</string>
-            <key>provisioningProfiles</key><dict/>
-            <key>signingStyle</key><string>automatic</string>
-            <key>uploadBitcode</key><false/>
-            <key>uploadSymbols</key><true/>
-          </dict>
-          </plist>
-          PLIST
-          xcodebuild -exportArchive -archivePath $HOME/build/App.xcarchive -exportPath $HOME/build/ipa -exportOptionsPlist /tmp/ExportOptions.plist -allowProvisioningUpdates -authenticationKeyPath /tmp/AuthKey.p8 -authenticationKeyID "$KEY_ID" -authenticationKeyIssuerID "$ISSUER_ID"
-          ls -lh $HOME/build/ipa/
-          mkdir -p build/ios/ipa
-          cp $HOME/build/ipa/*.ipa build/ios/ipa/ || true
+          # Listar y borrar certs viejos sin llave privada
+          app-store-connect certificates list --type IOS_DISTRIBUTION || true
+          # Crear certificado y perfil nuevo con la integración Codemagic (sin .p8 manual)
+          app-store-connect fetch-signing-files $BUNDLE_ID --type IOS_APP_STORE --create --verbose
+          keychain add-certificates
+          echo "=== IDENTIDADES ==="
+          security find-identity -v -p codesigning
+          echo "=== PERFILES ==="
+          ls -lh ~/Library/MobileDevice/Provisioning\ Profiles/
+          xcode-project use-profiles --project $XCODE_PROJECT --verbose
+      - name: Build IPA
+        script: |
+          xcode-project build-ipa --project $XCODE_PROJECT --scheme $XCODE_SCHEME --verbose
     artifacts:
       - build/ios/ipa/*.ipa
-      - $HOME/build/ipa/*.ipa
+      - /tmp/xcodebuild_logs/*.log
