@@ -32,17 +32,13 @@ workflows:
           pod install
       - name: Create Certificate with CSR and Profile
         script: |
-          set -x
           keychain initialize
           openssl genrsa -out /tmp/private.key 2048
           openssl req -new -key /tmp/private.key -out /tmp/cert.csr -subj "/CN=TandaFacil Distribution/O=Pedro Gonzalez/C=MX"
           app-store-connect certificates create --type IOS_DISTRIBUTION --csr /tmp/cert.csr --verbose
           sleep 5
-          app-store-connect certificates list --type IOS_DISTRIBUTION --verbose
           app-store-connect fetch-signing-files $BUNDLE_ID --type IOS_APP_STORE --create --verbose
           keychain add-certificates
-          security find-identity -v -p codesigning
-          ls -lh ~/Library/MobileDevice/Provisioning\ Profiles/ || true
           xcode-project use-profiles --project $XCODE_PROJECT --verbose
       - name: Build IPA
         script: |
