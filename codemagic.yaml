@@ -1,0 +1,44 @@
+workflows:
+  ios-workflow:
+    name: TandaFacil iOS Build
+    instance_type: mac_mini_m1
+    max_build_duration: 60
+    integrations:
+      app_store_connect: Codemagic2
+    environment:
+      vars:
+        XCODE_PROJECT: ios/App/App.xcodeproj
+        XCODE_SCHEME: App
+        BUNDLE_ID: com.tandafacil.app2026
+      xcode: 16.2
+      cocoapods: 1.16.2
+      node: 20
+    scripts:
+      - name: Install dependencies
+        script: npm install
+      - name: Fix config and prepare www
+        script: |
+          python3 -c "import json; p='capacitor.config.json'; d=json.load(open(p)); d['appId']='com.tandafacil.app2026'; d['webDir']='www'; json.dump(d, open(p,'w'), indent=2)"
+          mkdir -p www
+          cp index.html www/index.html
+      - name: Add iOS platform
+        script: |
+          rm -rf ios
+          npx cap add ios
+          npx cap copy ios
+      - name: Install Pods
+        script: |
+          cd ios/App
+          pod install
+      - name: Fetch Signing Files
+        script: |
+          keychain initialize
+          app-store-connect fetch-signing-files $BUNDLE_ID --type IOS_APP_STORE --create
+          keychain add-certificates
+          xcode-project use-profiles
+      - name: Build IPA
+        script: |
+          xcode-project build-ipa --project $XCODE_PROJECT --scheme $XCODE_SCHEME --verbose
+    artifacts:
+      - build/ios/ipa/*.ipa
+      - /tmp/xcodebuild_logs/*.log
