@@ -36,7 +36,7 @@ workflows:
           openssl genrsa -out /tmp/private.key 2048
           app-store-connect fetch-signing-files $BUNDLE_ID --type IOS_APP_STORE --create --certificate-key @file:/tmp/private.key --verbose
           keychain add-certificates
-       - name: Build IPA
+      - name: Build IPA
         script: |
           PROFILE_FILE=$(ls ~/Library/MobileDevice/Provisioning\ Profiles/*.mobileprovision | head -1)
           security cms -D -i "$PROFILE_FILE" > /tmp/profile.plist
