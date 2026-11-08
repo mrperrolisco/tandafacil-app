@@ -33,15 +33,8 @@ workflows:
       - name: Setup signing
         script: |
           keychain initialize
-          openssl genrsa -out /tmp/private.key 2048
-          openssl req -new -key /tmp/private.key -out /tmp/cert.csr -subj "/CN=TandaFacil Distribution/O=Pedro Gonzalez/C=MX"
-          app-store-connect certificates create --type IOS_DISTRIBUTION --csr /tmp/cert.csr --verbose || true
-          sleep 5
-          app-store-connect fetch-signing-files $BUNDLE_ID --type IOS_APP_STORE --create --certificate-key @file:/tmp/private.key --verbose
+          app-store-connect fetch-signing-files $BUNDLE_ID --type IOS_APP_STORE --create --verbose
           keychain add-certificates
-          echo "=== PERFILES ==="
-          ls -lh ~/Library/MobileDevice/Provisioning\ Profiles/
-          xcode-project use-profiles --project $XCODE_PROJECT --verboseun
       - name: Build IPA
         script: |
           xcode-project build-ipa --project $XCODE_PROJECT --scheme $XCODE_SCHEME --verbose
