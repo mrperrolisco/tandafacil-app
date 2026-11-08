@@ -36,8 +36,8 @@ workflows:
       - name: Use Stored Signing Files
         script: |
           keychain initialize
-          keychain add-certificates
-          xcode-project use-profiles
+          keychain add-certificates --certificate "$CM_CERTIFICATE" --certificate-password "$CM_CERTIFICATE_PASSWORD"
+          xcode-project use-profiles --profile "$CM_PROVISIONING_PROFILE"
           ls -lh ~/Library/MobileDevice/Provisioning\ Profiles/
           security find-identity -v -p codesigning
       - name: Build IPA
