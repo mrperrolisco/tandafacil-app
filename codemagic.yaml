@@ -39,20 +39,28 @@ workflows:
           keychain add-certificates || true
       - name: Build IPA
         script: |
+          PROFILE_FILE=$(find ~/Library/MobileDevice -name "*.mobileprovision" | head -1)
+          echo "Perfil: $PROFILE_FILE"
+          security cms -D -i "$PROFILE_FILE" > /tmp/profile.plist
+          PROFILE_NAME=$(/usr/libexec/PlistBuddy -c "Print :Name" /tmp/profile.plist)
+          echo "Usando perfil: $PROFILE_NAME"
           cat > /tmp/make_plist.py << 'PY'
           import plistlib
+          import os
+          name = os.environ.get('PROFILE_NAME', '')
           data = {
             'method': 'app-store-connect',
             'signingStyle': 'manual',
-            'provisioningProfiles': {}
+            'provisioningProfiles': {'com.tandafacil.app2026': name}
           }
           f = open('/tmp/ExportOptions.plist', 'wb')
           plistlib.dump(data, f)
           f.close()
           PY
-          python3 /tmp/make_plist.py
+          PROFILE_NAME="$PROFILE_NAME" python3 /tmp/make_plist.py
           plutil -lint /tmp/ExportOptions.plist
-          xcodebuild -project $XCODE_PROJECT -scheme $XCODE_SCHEME -configuration Release -destination generic/platform=iOS -archivePath $HOME/build/App.xcarchive archive DEVELOPMENT_TEAM=KXD7Z5LF3M CODE_SIGN_STYLE=Manual CODE_SIGN_IDENTITY="Apple Distribution"
+          cat /tmp/ExportOptions.plist
+          xcodebuild -project $XCODE_PROJECT -scheme $XCODE_SCHEME -configuration Release -destination generic/platform=iOS -archivePath $HOME/build/App.xcarchive archive DEVELOPMENT_TEAM=KXD7Z5LF3M CODE_SIGN_STYLE=Manual CODE_SIGN_IDENTITY="Apple Distribution" PROVISIONING_PROFILE_SPECIFIER="$PROFILE_NAME"
           xcodebuild -exportArchive -archivePath $HOME/build/App.xcarchive -exportPath $HOME/build/ipa -exportOptionsPlist /tmp/ExportOptions.plist
           mkdir -p build/ios/ipa
           cp $HOME/build/ipa/*.ipa build/ios/ipa/ || true
