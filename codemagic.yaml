@@ -44,8 +44,10 @@ workflows:
           security cms -D -i "$PROFILE_FILE" > /tmp/profile.plist
           PROFILE_NAME=$(/usr/libexec/PlistBuddy -c "Print :Name" /tmp/profile.plist)
           PROFILE_UUID=$(/usr/libexec/PlistBuddy -c "Print :UUID" /tmp/profile.plist)
+          TEAM_ID=$(/usr/libexec/PlistBuddy -c "Print :TeamIdentifier:0" /tmp/profile.plist)
           echo "Usando perfil: $PROFILE_NAME"
           echo "UUID: $PROFILE_UUID"
+          echo "Team real: $TEAM_ID"
           mkdir -p ~/Library/MobileDevice/Provisioning\ Profiles/
           rm -rf ~/Library/MobileDevice/Provisioning\ Profiles/*
           cp "$PROFILE_FILE" ~/Library/MobileDevice/Provisioning\ Profiles/"$PROFILE_UUID".mobileprovision || true
@@ -66,7 +68,7 @@ workflows:
           PROFILE_NAME="$PROFILE_NAME" python3 /tmp/make_plist.py
           plutil -lint /tmp/ExportOptions.plist
           cat /tmp/ExportOptions.plist
-          xcodebuild -project $XCODE_PROJECT -scheme $XCODE_SCHEME -configuration Release -destination generic/platform=iOS -archivePath $HOME/build/App.xcarchive archive DEVELOPMENT_TEAM=KXD7Z5LF3M CODE_SIGN_STYLE=Manual CODE_SIGN_IDENTITY="Apple Distribution" PROVISIONING_PROFILE="$PROFILE_UUID"
+          xcodebuild -project $XCODE_PROJECT -scheme $XCODE_SCHEME -configuration Release -destination generic/platform=iOS -archivePath $HOME/build/App.xcarchive archive DEVELOPMENT_TEAM="$TEAM_ID" CODE_SIGN_STYLE=Manual CODE_SIGN_IDENTITY="iOS Distribution" PROVISIONING_PROFILE="$PROFILE_UUID"
           xcodebuild -exportArchive -archivePath $HOME/build/App.xcarchive -exportPath $HOME/build/ipa -exportOptionsPlist /tmp/ExportOptions.plist
           mkdir -p build/ios/ipa
           cp $HOME/build/ipa/*.ipa build/ios/ipa/ || true
