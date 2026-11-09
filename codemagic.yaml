@@ -39,11 +39,18 @@ workflows:
           keychain add-certificates || true
       - name: Build IPA
         script: |
-          PROFILE_FILE=$(find ~/Library/MobileDevice -name "*.mobileprovision" | head -1)
+          keychain initialize
+          openssl genrsa -out /tmp/private2.key 2048
+          app-store-connect fetch-signing-files $BUNDLE_ID --type IOS_APP_STORE --certificate-key @file:/tmp/private2.key --verbose || true
+          app-store-connect fetch-signing-files $BUNDLE_ID --type IOS_APP_STORE --create --certificate-key @file:/tmp/private2.key --verbose || true
+          keychain add-certificates || true
+          PROFILE_FILE=$(find $HOME -name "*.mobileprovision" | head -1)
           echo "Perfil: $PROFILE_FILE"
+          ls -lh ~/Library/MobileDevice/Provisioning\ Profiles/
           security cms -D -i "$PROFILE_FILE" > /tmp/profile.plist
-          PROFILE_NAME=$(/usr/libexec/PlistBuddy -c "Print :Name" /tmp/profile.plist)
+          PROFILE_NAME=$(python3 -c "import plistlib; print(plistlib.load(open('/tmp/profile.plist','rb'))['Name'])")
           echo "Usando perfil: $PROFILE_NAME"
+          export PROFILE_NAME
           cat > /tmp/make_plist.py << 'PY'
           import plistlib
           import os
@@ -57,7 +64,7 @@ workflows:
           plistlib.dump(data, f)
           f.close()
           PY
-          PROFILE_NAME="$PROFILE_NAME" python3 /tmp/make_plist.py
+          python3 /tmp/make_plist.py
           plutil -lint /tmp/ExportOptions.plist
           cat /tmp/ExportOptions.plist
           xcodebuild -project $XCODE_PROJECT -scheme $XCODE_SCHEME -configuration Release -destination generic/platform=iOS -archivePath $HOME/build/App.xcarchive archive DEVELOPMENT_TEAM=KXD7Z5LF3M CODE_SIGN_STYLE=Manual CODE_SIGN_IDENTITY="Apple Distribution" PROVISIONING_PROFILE_SPECIFIER="$PROFILE_NAME"
