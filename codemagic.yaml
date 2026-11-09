@@ -41,12 +41,15 @@ workflows:
         script: |
           PROFILE_FILE=$(find ~/Library -name "*.mobileprovision" | head -1)
           echo "Perfil: $PROFILE_FILE"
-          mkdir -p ~/Library/MobileDevice/Provisioning\ Profiles/
-          cp "$PROFILE_FILE" ~/Library/MobileDevice/Provisioning\ Profiles/ || true
-          ls -lh ~/Library/MobileDevice/Provisioning\ Profiles/ || true
           security cms -D -i "$PROFILE_FILE" > /tmp/profile.plist
           PROFILE_NAME=$(/usr/libexec/PlistBuddy -c "Print :Name" /tmp/profile.plist)
+          PROFILE_UUID=$(/usr/libexec/PlistBuddy -c "Print :UUID" /tmp/profile.plist)
           echo "Usando perfil: $PROFILE_NAME"
+          echo "UUID: $PROFILE_UUID"
+          mkdir -p ~/Library/MobileDevice/Provisioning\ Profiles/
+          cp "$PROFILE_FILE" ~/Library/MobileDevice/Provisioning\ Profiles/"$PROFILE_UUID".mobileprovision || true
+          cp "$PROFILE_FILE" ~/Library/MobileDevice/Provisioning\ Profiles/ || true
+          ls -lh ~/Library/MobileDevice/Provisioning\ Profiles/ || true
           cat > /tmp/make_plist.py << 'PY'
           import plistlib
           import os
