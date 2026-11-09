@@ -49,6 +49,6 @@ workflows:
           python3 /tmp/make_plist.py
           plutil -lint /tmp/ExportOptions.plist
           xcode-project build-ipa --project $XCODE_PROJECT --scheme $XCODE_SCHEME --export-options-plist /tmp/ExportOptions.plist --verbose      
-        artifacts:
+    artifacts:
       - build/ios/ipa/*.ipa
       - /tmp/xcodebuild_logs/*.log
