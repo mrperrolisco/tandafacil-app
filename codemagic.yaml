@@ -33,16 +33,22 @@ workflows:
       - name: Setup signing
         script: |
           keychain initialize
-          openssl genrsa -out /tmp/private.key 2048
-          app-store-connect fetch-signing-files $BUNDLE_ID --type IOS_APP_STORE --certificate-key @file:/tmp/private.key --verbose || true
-          app-store-connect fetch-signing-files $BUNDLE_ID --type IOS_APP_STORE --create --certificate-key @file:/tmp/private.key --verbose || true
-          keychain add-certificates || true
-          ls -lh ~/Library/MobileDevice/Provisioning\ Profiles/ || true
-          security find-identity -v -p codesigning || true
       - name: Build IPA
         script: |
-          python3 -c "import plistlib; plistlib.dump({'method':'app-store-connect','signingStyle':'automatic','provisioningProfiles':{}}, open('/tmp/ExportOptions.plist','wb'))"
-          xcode-project build-ipa --project $XCODE_PROJECT --scheme $XCODE_SCHEME --export-options-plist /tmp/ExportOptions.plist --verbose
-    artifacts:
+          cat > /tmp/make_plist.py << 'PY'
+          import plistlib
+          data = {
+            'method': 'app-store-connect',
+            'signingStyle': 'automatic',
+            'provisioningProfiles': {}
+          }
+          f = open('/tmp/ExportOptions.plist', 'wb')
+          plistlib.dump(data, f)
+          f.close()
+          PY
+          python3 /tmp/make_plist.py
+          plutil -lint /tmp/ExportOptions.plist
+          xcode-project build-ipa --project $XCODE_PROJECT --scheme $XCODE_SCHEME --export-options-plist /tmp/ExportOptions.plist --verbose      
+        artifacts:
       - build/ios/ipa/*.ipa
       - /tmp/xcodebuild_logs/*.log
