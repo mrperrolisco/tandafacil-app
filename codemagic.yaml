@@ -38,20 +38,8 @@ workflows:
           keychain add-certificates
       - name: Build IPA
         script: |
-          cat > /tmp/ExportOptions.plist << PLIST
-          <?xml version="1.0" encoding="UTF-8"?>
-          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
-          <plist version="1.0">
-          <dict>
-            <key>method</key><string>app-store-connect</string>
-            <key>signingStyle</key><string>automatic</string>
-            <key>teamID</key><string>KXD7Z5LF3M</string>
-            <key>provisioningProfiles</key><dict/>
-            <key>uploadBitcode</key><false/>
-            <key>uploadSymbols</key><true/>
-          </dict>
-          </plist>
-          PLIST
+          python3 -c "import plistlib; plistlib.dump({'method':'app-store-connect','signingStyle':'automatic','teamID':'KXD7Z5LF3M','provisioningProfiles':{},'uploadBitcode':False,'uploadSymbols':True}, open('/tmp/ExportOptions.plist','wb'))"
+          cat /tmp/ExportOptions.plist
           xcode-project build-ipa --project $XCODE_PROJECT --scheme $XCODE_SCHEME --export-options-plist /tmp/ExportOptions.plist --verbose
     artifacts:
       - build/ios/ipa/*.ipa
