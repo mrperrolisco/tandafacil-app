@@ -38,28 +38,21 @@ workflows:
           keychain add-certificates
       - name: Build IPA
         script: |
-          PROFILE_FILE=$(find ~/Library/MobileDevice -name "*.mobileprovision" | head -1)
-          echo "Perfil encontrado: $PROFILE_FILE"
-          security cms -D -i "$PROFILE_FILE" > /tmp/profile.plist
-          PROFILE_NAME=$(/usr/libexec/PlistBuddy -c "Print :Name" /tmp/profile.plist)
-          TEAM_ID=$(/usr/libexec/PlistBuddy -c "Print :TeamIdentifier:0" /tmp/profile.plist)
-          echo "Usando perfil: $PROFILE_NAME Team: $TEAM_ID"
-          xcodebuild -project $XCODE_PROJECT -scheme $XCODE_SCHEME -configuration Release -archivePath $HOME/build/App.xcarchive archive CODE_SIGN_STYLE=Manual DEVELOPMENT_TEAM=$TEAM_ID PROVISIONING_PROFILE_SPECIFIER="$PROFILE_NAME" CODE_SIGN_IDENTITY="Apple Distribution"
           cat > /tmp/ExportOptions.plist << PLIST
           <?xml version="1.0" encoding="UTF-8"?>
           <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
           <plist version="1.0">
           <dict>
             <key>method</key><string>app-store-connect</string>
-            <key>provisioningProfiles</key><dict><key>com.tandafacil.app2026</key><string>$PROFILE_NAME</string></dict>
-            <key>signingStyle</key><string>manual</string>
+            <key>signingStyle</key><string>automatic</string>
+            <key>teamID</key><string>KXD7Z5LF3M</string>
+            <key>provisioningProfiles</key><dict/>
+            <key>uploadBitcode</key><false/>
+            <key>uploadSymbols</key><true/>
           </dict>
           </plist>
           PLIST
-          xcodebuild -exportArchive -archivePath $HOME/build/App.xcarchive -exportPath $HOME/build/ipa -exportOptionsPlist /tmp/ExportOptions.plist
-          mkdir -p build/ios/ipa
-          cp $HOME/build/ipa/*.ipa build/ios/ipa/ || true
-          ls -lh build/ios/ipa/
+          xcode-project build-ipa --project $XCODE_PROJECT --scheme $XCODE_SCHEME --export-options-plist /tmp/ExportOptions.plist --verbose
     artifacts:
       - build/ios/ipa/*.ipa
       - /tmp/xcodebuild_logs/*.log
