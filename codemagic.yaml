@@ -1,4 +1,4 @@
-workflows:
+un workflows:
   ios-workflow:
     name: TandaFacil iOS Build
     instance_type: mac_mini_m1
@@ -76,7 +76,8 @@ workflows:
           plutil -lint /tmp/ExportOptions.plist
           cat /tmp/ExportOptions.plist
           xcodebuild -workspace $XCODE_PROJECT -scheme App -configuration Release -archivePath $HOME/build/App.xcarchive archive DEVELOPMENT_TEAM=$TEAM_ID CODE_SIGN_STYLE=Manual CODE_SIGN_IDENTITY="Apple Distribution" CODE_SIGNING_ALLOWED=NO
-          xcodebuild -exportArchive -archivePath $HOME/build/App.xcarchive -exportPath $HOME/build/ipa -exportOptionsPlist /tmp/ExportOptions.plist
+          /usr/libexec/PlistBuddy -c "Add :teamID string $TEAM_ID" /tmp/ExportOptions.plist || true
+          xcodebuild -exportArchive -archivePath $HOME/build/App.xcarchive -exportOptionsPlist /tmp/ExportOptions.plist -exportPath $HOME/build/ipa
           mkdir -p build/ios/ipa
           cp $HOME/build/ipa/*.ipa build/ios/ipa/ || true
           ls -lh build/ios/ipa/
