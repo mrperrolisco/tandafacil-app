@@ -78,6 +78,7 @@ un workflows:
           xcodebuild -workspace $XCODE_PROJECT -scheme App -configuration Release -archivePath $HOME/build/App.xcarchive archive DEVELOPMENT_TEAM=$TEAM_ID CODE_SIGN_STYLE=Automatic CODE_SIGN_IDENTITY="Apple Distribution" CODE_SIGNING_REQUIRED=YES
           /usr/libexec/PlistBuddy -c "Add :teamID string $TEAM_ID" /tmp/ExportOptions.plist || true
           /usr/libexec/PlistBuddy -c "Add :signingCertificate string Apple Distribution" /tmp/ExportOptions.plist || true
+          /usr/libexec/PlistBuddy -c "Add :ApplicationProperties:TeamIdentifier string $TEAM_ID" $HOME/build/App.xcarchive/Info.plist || /usr/libexec/PlistBuddy -c "Set :ApplicationProperties:TeamIdentifier string $TEAM_ID" $HOME/build/App.xcarchive/Info.plist || true
           xcodebuild -exportArchive -archivePath $HOME/build/App.xcarchive -exportOptionsPlist /tmp/ExportOptions.plist -exportPath $HOME/build/ipa
           mkdir -p build/ios/ipa
           cp $HOME/build/ipa/*.ipa build/ios/ipa/ || true
