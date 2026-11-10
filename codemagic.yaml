@@ -76,9 +76,8 @@ un workflows:
           plutil -lint /tmp/ExportOptions.plist
           cat /tmp/ExportOptions.plist
           xcodebuild -workspace $XCODE_PROJECT -scheme App -configuration Release -archivePath $HOME/build/App.xcarchive archive DEVELOPMENT_TEAM=$TEAM_ID CODE_SIGN_STYLE=Automatic CODE_SIGN_IDENTITY="Apple Distribution" CODE_SIGNING_REQUIRED=YES
-          /usr/libexec/PlistBuddy -c "Add :teamID string $TEAM_ID" /tmp/ExportOptions.plist || true
-          /usr/libexec/PlistBuddy -c "Add :signingCertificate string Apple Distribution" /tmp/ExportOptions.plist || true
-          /usr/libexec/PlistBuddy -c "Add :ApplicationProperties:TeamIdentifier string $TEAM_ID" $HOME/build/App.xcarchive/Info.plist || /usr/libexec/PlistBuddy -c "Set :ApplicationProperties:TeamIdentifier string $TEAM_ID" $HOME/build/App.xcarchive/Info.plist || true
+          python3 -c "import plistlib; p=plistlib.load(open('/tmp/ExportOptions.plist','rb')); p['teamID']='$TEAM_ID'; p['signingCertificate']='Apple Distribution'; plistlib.dump(p, open('/tmp/ExportOptions.plist','wb'))"
+          python3 -c "import plistlib; p=plistlib.load(open('$HOME/build/App.xcarchive/Info.plist','rb')); p.setdefault('ApplicationProperties',{})['TeamIdentifier']='$TEAM_ID'; plistlib.dump(p, open('$HOME/build/App.xcarchive/Info.plist','wb'))"
           xcodebuild -exportArchive -archivePath $HOME/build/App.xcarchive -exportOptionsPlist /tmp/ExportOptions.plist -exportPath $HOME/build/ipa
           mkdir -p build/ios/ipa
           cp $HOME/build/ipa/*.ipa build/ios/ipa/ || true
