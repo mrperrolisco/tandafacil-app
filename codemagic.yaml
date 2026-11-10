@@ -39,6 +39,8 @@ workflows:
           keychain add-certificates || true
       - name: Build IPA
         script: |
+          keychain add-certificates || true
+          security find-identity -v -p codesigning || true
           PROFILE_FILE=$(find ~/Library -name "*.mobileprovision" | head -1)
           echo "Perfil: $PROFILE_FILE"
           security cms -D -i "$PROFILE_FILE" > /tmp/profile.plist
@@ -68,7 +70,7 @@ workflows:
           PROFILE_NAME="$PROFILE_NAME" python3 /tmp/make_plist.py
           plutil -lint /tmp/ExportOptions.plist
           cat /tmp/ExportOptions.plist
-          xcodebuild -project $XCODE_PROJECT -scheme $XCODE_SCHEME -configuration Release -destination generic/platform=iOS -archivePath $HOME/build/App.xcarchive archive DEVELOPMENT_TEAM="$TEAM_ID" CODE_SIGN_STYLE=Manual CODE_SIGN_IDENTITY="iOS Distribution" PROVISIONING_PROFILE="$PROFILE_UUID"
+          xcodebuild -project $XCODE_PROJECT -scheme $XCODE_SCHEME -configuration Release -destination generic/platform=iOS -archivePath $HOME/build/App.xcarchive archive DEVELOPMENT_TEAM="$TEAM_ID" CODE_SIGN_STYLE=Manual CODE_SIGN_IDENTITY="Apple Distribution" PROVISIONING_PROFILE="$PROFILE_UUID"
           xcodebuild -exportArchive -archivePath $HOME/build/App.xcarchive -exportPath $HOME/build/ipa -exportOptionsPlist /tmp/ExportOptions.plist
           mkdir -p build/ios/ipa
           cp $HOME/build/ipa/*.ipa build/ios/ipa/ || true
