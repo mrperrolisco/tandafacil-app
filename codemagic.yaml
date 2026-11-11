@@ -76,10 +76,7 @@ un workflows:
           PROFILE_NAME="$PROFILE_NAME" python3 /tmp/make_plist.py
           plutil -lint /tmp/ExportOptions.plist
           cat /tmp/ExportOptions.plist
-          xcodebuild -workspace $XCODE_PROJECT -scheme App -configuration Release -archivePath $HOME/build/App.xcarchive archive DEVELOPMENT_TEAM=6VQD37FLSQ CODE_SIGN_STYLE=Automatic -allowProvisioningUpdates
-          python3 -c "import plistlib; p=plistlib.load(open('/tmp/ExportOptions.plist','rb')); p['teamID']='$TEAM_ID'; p['signingCertificate']='Apple Distribution'; plistlib.dump(p, open('/tmp/ExportOptions.plist','wb'))"
-          python3 -c "import plistlib; p=plistlib.load(open('$HOME/build/App.xcarchive/Info.plist','rb')); p.setdefault('ApplicationProperties',{})['TeamIdentifier']='$TEAM_ID'; plistlib.dump(p, open('$HOME/build/App.xcarchive/Info.plist','wb'))"
-          xcodebuild -workspace $XCODE_PROJECT -scheme App -configuration Release -archivePath $HOME/build/App.xcarchive archive DEVELOPMENT_TEAM=6VQD37FLSQ CODE_SIGN_STYLE=Automatic -allowProvisioningUpdates
+          xcode-project build-ipa --workspace "$XCODE_PROJECT" --scheme App --export-options-plist /tmp/ExportOptions.plist --export-path $HOME/build/ipa
           mkdir -p build/ios/ipa
           cp $HOME/build/ipa/*.ipa build/ios/ipa/ || true
           ls -lh build/ios/ipa/
