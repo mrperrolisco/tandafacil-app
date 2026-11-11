@@ -1,4 +1,4 @@
-un workflows:
+workflows:
   ios-workflow:
     name: TandaFacil iOS Build
     instance_type: mac_mini_m1
