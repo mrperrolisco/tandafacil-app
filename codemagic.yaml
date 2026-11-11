@@ -65,7 +65,7 @@ un workflows:
           import os
           name = os.environ.get('PROFILE_NAME', '')
           data = {
-            'method': 'app-store-connect',
+            'method': 'app-store',
             'signingStyle': 'manual',
             'provisioningProfiles': {'com.tandafacil.app2026': name}
           }
