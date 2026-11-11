@@ -76,7 +76,8 @@ un workflows:
           PROFILE_NAME="$PROFILE_NAME" python3 /tmp/make_plist.py
           plutil -lint /tmp/ExportOptions.plist
           cat /tmp/ExportOptions.plist
-          xcode-project build-ipa --workspace "$XCODE_PROJECT" --scheme App --export-options-plist /tmp/ExportOptions.plist --export-path $HOME/build/ipa
+          python3 -c "import plistlib; p=plistlib.load(open('/tmp/ExportOptions.plist','rb')); p['teamID']='6VQD37FLSQ'; plistlib.dump(p, open('/tmp/ExportOptions.plist','wb'))"
+          xcode-project build-ipa --workspace "$XCODE_PROJECT" --scheme App --development-team 6VQD37FLSQ --code-sign-identity "Apple Distribution" --export-options-plist /tmp/ExportOptions.plist --export-path $HOME/build/ipa
           mkdir -p build/ios/ipa
           cp $HOME/build/ipa/*.ipa build/ios/ipa/ || true
           ls -lh build/ios/ipa/
