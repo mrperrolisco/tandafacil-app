@@ -20,7 +20,7 @@ workflows:
         script: |
           python3 -c "import json; p='capacitor.config.json'; d=json.load(open(p)); d['appId']='com.tandafacil.app'; d['webDir']='www'; json.dump(d, open(p,'w'), indent=2)"
           mkdir -p www
-          cp index.html www/index.html
+          cp index-v7.html www/index.html
       - name: Add iOS platform
         script: |
           rm -rf ios
