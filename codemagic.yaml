@@ -70,7 +70,7 @@ workflows:
           data = {
             'method': 'app-store',
             'signingStyle': 'manual',
-            'provisioningProfiles': {'com.tandafacil.app2026': name}
+            'provisioningProfiles': {'com.tandafacil.app': name}
           }
           f = open('/tmp/ExportOptions.plist', 'wb')
           plistlib.dump(data, f)
