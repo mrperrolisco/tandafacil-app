@@ -42,6 +42,9 @@ workflows:
           cd ios/App
           pod install --repo-update
           cd ../..
+      - name: Use profiles
+        script: |
+          xcode-project use-profiles     
       - name: Build IPA
         script: |
           keychain add-certificates || true
