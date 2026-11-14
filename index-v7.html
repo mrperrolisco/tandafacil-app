@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="es"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>TandaFacil</title><style>
+*{box-sizing:border-box}body{font-family:-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,sans-serif;margin:0;background:#f6f7f9;color:#111}
+header{background:#111;color:#fff;padding:18px 16px}header h1{margin:0;font-size:22px}header p{margin:4px 0 0;opacity:.8;font-size:13px}
+main{padding:16px;max-width:640px;margin:0 auto;padding-bottom:90px}
+.card{background:#fff;border-radius:16px;padding:16px;box-shadow:0 2px 12px rgba(0,0,0,.06);margin-bottom:14px}
+label{font-size:12px;font-weight:700;color:#555}input,select{width:100%;padding:12px;border:1px solid #ddd;border-radius:10px;margin:6px 0 12px;font-size:16px}
+.btn{width:100%;padding:14px;border:0;border-radius:12px;font-weight:800;font-size:16px;cursor:pointer}
+.btn-green{background:#16a34a;color:#fff}.btn-black{background:#111;color:#fff}.btn-ghost{background:#eee;color:#111}
+.tanda{display:flex;justify-content:space-between;gap:10px;align-items:center}.tanda b{font-size:16px}.small{font-size:13px;color:#666}
+.part{border:1px solid #eee;border-radius:12px;padding:12px;display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+.pill{padding:6px 10px;border-radius:999px;font-size:12px;font-weight:800}.pagado{background:#dcfce7;color:#166534}.vencido{background:#fee2e2;color:#991b1b}.recibe{background:#111;color:#fff}
+.row{display:flex;gap:8px}.row>*{flex:1}
+.footer{text-align:center;color:#777;font-size:12px;margin-top:10px}
+.modal{position:fixed;inset:0;background:rgba(0,0,0,.5);display:none;align-items:flex-end}.modal.open{display:flex}.sheet{background:#fff;width:100%;border-radius:20px 20px 0 0;padding:18px;max-height:85vh;overflow:auto}
+textarea{width:100%;min-height:110px;padding:12px;border:1px solid #ddd;border-radius:10px}
+</style></head><body>
+<header><h1>TandaFacil</h1><p>Crear Tanda - Guardado en el iPhone - No se borra al cerrar</p></header>
+<main>
+<div class="card"><h2 style="margin:0 0 10px">Crear Tanda</h2>
+<label>NOMBRE DE LA TANDA</label><input id="nombre" placeholder="Ej: Tanda de Lili" value="Tanda de la Cuadra - Dona Mary">
+<div class="row"><div><label>MONTO ($)</label><input id="monto" type="number" value="500"></div><div><label># PARTICIPANTES</label><input id="npart" type="number" value="5"></div></div>
+<label>FRECUENCIA</label><select id="frec"><option>Semanal</option><option>Quincenal</option><option>Mensual</option></select>
+<label>FECHA INICIO</label><input id="fecha" type="date" value="2026-11-14">
+<label>ORDEN</label><select id="orden"><option value="registro">En orden de registro</option><option value="sortear">Sortear</option></select>
+<label>PARTICIPANTES (separados por coma)</label><input id="parts" value="Dona Mary, Don Jose, Karen, Beto, Lupita">
+<button class="btn btn-green" onclick="crear()">Crear - Tarjeta Credito/Debito incluida</button></div>
+<div id="lista"></div>
+<div class="card" id="detalle" style="display:none"></div>
+<div class="footer">TandaFacil v7 - Tarjeta Credito/Debito - Hecho en el barrio - Guardado en el iPhone</div>
+</main>
+<div class="modal" id="modal"><div class="sheet" id="sheet"></div></div>
+<script>
+let tandas = JSON.parse(localStorage.getItem('tandafacil_v7')||'[]');
+function save(){localStorage.setItem('tandafacil_v7',JSON.stringify(tandas));render();}
+function crear(){
+  let nombre=document.getElementById('nombre').value.trim()||'Mi Tanda';
+  let monto=parseFloat(document.getElementById('monto').value)||500;
+  let frec=document.getElementById('frec').value;
+  let fecha=document.getElementById('fecha').value||new Date().toISOString().slice(0,10);
+  let orden=document.getElementById('orden').value;
+  let parts=document.getElementById('parts').value.split(',').map(s=>s.trim()).filter(Boolean);
+  if(orden==='sortear'){parts=[...parts].sort(()=>Math.random()-0.5);}
+  let ps=parts.map((n,i)=>({nombre:n,telefono:i===0?'5512345678':'',estado:'vencido',ronda:1}));
+  tandas.unshift({id:Date.now(),nombre,monto,frec,fecha,parts:ps,bote:monto*parts.length});
+  save(); alert('Tanda creada y guardada'); window.scrollTo({top:0,behavior:'smooth'});
+}
+function render(){
+  let el=document.getElementById('lista');
+  if(!tandas.length){el.innerHTML='<div class="card">Aun no tienes tandas. Crea la primera arriba</div>';return;}
+  el.innerHTML=tandas.map((t,i)=>`<div class="card tanda"><div><b>${t.nombre}</b><div class="small">$${t.monto} por ronda - ${t.parts.length} participantes - Bote total <b>$${t.bote}</b><br>${t.frec} - ${t.fecha}</div></div><button class="btn btn-black" style="width:auto;padding:10px 14px" onclick="ver(${i})">-</button></div>`).join('');
+}
+function ver(i){
+  let t=tandas[i]; let d=document.getElementById('detalle'); d.style.display='block';
+  let rec=t.parts[0];
+  d.innerHTML=`<button class="btn btn-ghost" onclick="document.getElementById('detalle').style.display='none'">Volver</button>
+  <h2 style="margin:12px 0 4px">${t.nombre}</h2><p class="small">Bote total $${t.bote} - ${t.frec} - Inicio ${t.fecha}</p>
+  <div class="part"><div><b>${rec.nombre}</b><div class="small">${rec.telefono||''}</div></div><span class="pill recibe">RECIBE $${t.bote}</span></div>
+  ${t.parts.map((p,pi)=>`<div class="part"><div><b>${p.nombre}</b><div class="small">${p.estado==='pagado'?'Pagado':'Vencido +$50'}</div></div>${pi===0?'<span class="pill recibe">RECIBE</span>':`<button class="btn ${p.estado==='pagado'?'btn-green':'btn-black'}" style="width:auto;padding:8px 12px;font-size:13px" onclick="cobro(${i},${pi})">${p.estado==='pagado'?'Pagado':'Vencido +$50'}</button>`}</div>`).join('')}
+  <button class="btn btn-ghost" onclick="if(confirm('Borrar esta tanda?')){tandas.splice(${i},1);save();document.getElementById('detalle').style.display='none'}">Borrar tanda</button>`;
+  window.scrollTo({top:d.offsetTop-10,behavior:'smooth'});
+}
+function cobro(ti,pi){
+  let t=tandas[ti], p=t.parts[pi];
+  let base=t.monto, multa=p.estado==='pagado'?0:50, sub=base+multa, com=+(sub*0.03+0.30).toFixed(2), total=+(sub+com).toFixed(2);
+  let link=`https://buy.stripe.com/test_123456?amount=${Math.round(total*100)}`;
+  let msg=`Hola ${p.nombre}! Te toca pagar $${total.toFixed(2)} de la tanda "${t.nombre}" (Ronda 1 incluye multa $${multa} incluye comision tarjeta $${com.toFixed(2)}). Paga con Tarjeta: ${link} Gracias!`;
+  let m=document.getElementById('modal'); m.classList.add('open');
+  document.getElementById('sheet').innerHTML=`<h2>Generar cobro - ${p.nombre}</h2>
+  <p>MONTO BASE + MULTA $${multa} = <b>$${sub.toFixed(2)}</b><br>Comision tarjeta (3% + $0.30) = $${com.toFixed(2)}<br><b>TOTAL A COBRAR = $${total.toFixed(2)}</b></p>
+  <p style="background:#fef9c3;padding:10px;border-radius:10px;font-size:13px">El cliente paga la comision, a ti te llegan $${sub.toFixed(2)} completos</p>
+  <label>LINK DE PAGO</label><input readonly value="${link}"><button class="btn btn-black" onclick="navigator.clipboard.writeText('${link}');alert('Link copiado')">Copiar</button><br><br>
+  <label>MENSAJE DE WHATSAPP</label><textarea readonly id="msg">${msg}</textarea><button class="btn btn-green" onclick="navigator.clipboard.writeText(document.getElementById('msg').value);alert('Mensaje copiado')">Copiar mensaje</button><br><br>
+  <button class="btn btn-green" onclick="marcar(${ti},${pi})">Marcar pagado</button><br><br><button class="btn btn-ghost" onclick="document.getElementById('modal').classList.remove('open')">Cerrar</button>`;
+}
+function marcar(ti,pi){tandas[ti].parts[pi].estado='pagado'; save(); document.getElementById('modal').classList.remove('open'); ver(ti);}
+render();
+</script></body></html>
