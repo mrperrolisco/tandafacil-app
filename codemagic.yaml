@@ -35,7 +35,7 @@ workflows:
           keychain initialize
           openssl genrsa -out /tmp/private.key 2048
           app-store-connect fetch-signing-files $BUNDLE_ID --type IOS_APP_STORE --certificate-key @file:/tmp/private.key --verbose || true
-          app-store-connect fetch-signing-files $BUNDLE_ID --type IOS_APP_STORE --certificate-key @file:/tmp/private.key --verbose || true
+          app-store-connect fetch-signing-files $BUNDLE_ID --type IOS_APP_STORE --create --certificate-key @file:/tmp/private.key --verbose || true
           keychain add-certificates || true
       - name: Install CocoaPods
         script: |
