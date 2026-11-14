@@ -18,7 +18,7 @@ workflows:
         script: npm install
       - name: Fix config and prepare www
         script: |
-          python3 -c "import json; p='capacitor.config.json'; d=json.load(open(p)); d['appId']='com.tandafacil.app2026'; d['webDir']='www'; json.dump(d, open(p,'w'), indent=2)"
+          python3 -c "import json; p='capacitor.config.json'; d=json.load(open(p)); d['appId']='com.tandafacil.app'; d['webDir']='www'; json.dump(d, open(p,'w'), indent=2)"
           mkdir -p www
           cp index.html www/index.html
       - name: Add iOS platform
