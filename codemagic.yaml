@@ -66,7 +66,7 @@ workflows:
           cat > /tmp/make_plist.py << 'PY'
           import plistlib
           import os
-          name = os.environ.get('PROFILE_NAME', '')
+          name = 'TandaFacil Profile'
           data = {
             'method': 'app-store',
             'signingStyle': 'manual',
