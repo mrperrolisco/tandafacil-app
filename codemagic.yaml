@@ -11,6 +11,8 @@ workflows:
       xcode: latest
       cocoapods: default
       node: 20
+    integrations:
+      app_store_connect: Codemagic2
     triggering:
       events:
         - push
@@ -36,6 +38,4 @@ workflows:
       - /tmp/xcodebuild_logs/*.log
     publishing:
       app_store_connect:
-        auth: integration
-        api_key: Codemagic2
-        submit_to_testflight: true
+      submit_to_testflight: true
