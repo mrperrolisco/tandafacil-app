@@ -36,10 +36,11 @@ workflows:
           ls -lh www/index.html
       - name: Sync Capacitor iOS
         script: |
-          if [ ! -f capacitor.config.ts ]; then
-            printf "import type { CapacitorConfig } from '@capacitor/cli';\n\nconst config: CapacitorConfig = {\n  appId: 'com.tandafacil.app',\n  appName: 'TandaFacil',\n  webDir: 'www'\n};\n\nexport default config;\n" > capacitor.config.ts
+          rm -f capacitor.config.ts
+          if [ ! -f capacitor.config.js ]; then
+            printf "module.exports = {\n  appId: 'com.tandafacil.app',\n  appName: 'TandaFacil',\n  webDir: 'www'\n};\n" > capacitor.config.js
           fi
-          cat capacitor.config.ts
+          cat capacitor.config.js
           if [ ! -d ios ]; then
             npx cap add ios
           fi
