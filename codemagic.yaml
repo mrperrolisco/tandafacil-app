@@ -38,4 +38,4 @@ workflows:
       - /tmp/xcodebuild_logs/*.log
     publishing:
       app_store_connect:
-      submit_to_testflight: true
+        submit_to_testflight: true
