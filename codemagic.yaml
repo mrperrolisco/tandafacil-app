@@ -1,92 +1,41 @@
 workflows:
-  ios-workflow:
-    name: TandaFacil iOS Build
-    instance_type: mac_mini_m1
+  tandafacil-ios:
+    name: TandaFacil iOS
     max_build_duration: 60
-    integrations:
-      app_store_connect: Codemagic2
+    instance_type: mac_mini_m1
     environment:
       vars:
-        XCODE_PROJECT: ios/App/App.xcworkspace
+        XCODE_PROJECT: ios/App/App
         XCODE_SCHEME: App
         BUNDLE_ID: com.tandafacil.app
       xcode: latest
-      cocoapods: 1.16.2
+      cocoapods: default
       node: 20
+    triggering:
+      events:
+        - push
+      branch_patterns:
+        - pattern: main
+          include: true
     scripts:
-      - name: Install dependencies
-        script: npm install
       - name: Fix config and prepare www
         script: |
-          python3 -c "import json; p='capacitor.config.json'; d=json.load(open(p)); d['appId']='com.tandafacil.app'; d['webDir']='www'; json.dump(d, open(p,'w'), indent=2)"
-          mkdir -p www
           cp index-v8.html www/index.html
-      - name: Add iOS platform
-        script: |
-          rm -rf ios
-          npx cap add ios
-          npx cap copy ios
-      - name: Install Pods
-        script: |
-          cd ios/App
-          pod install
-      - name: Setup signing
+          npx cap sync ios
+      - name: Set up code signing
         script: |
           keychain initialize
-          openssl genrsa -out /tmp/private.key 2048
-          app-store-connect fetch-signing-files $BUNDLE_ID --type IOS_APP_STORE --certificate-key @file:/tmp/private.key --verbose || true
-          app-store-connect fetch-signing-files $BUNDLE_ID --type IOS_APP_STORE --create --certificate-key @file:/tmp/private.key --verbose || true
-          keychain add-certificates || true
-      - name: Install CocoaPods
-        script: |
-          cd ios/App
-          pod install --repo-update
-          cd ../..
-      - name: Use profiles
-        script: |
-          xcode-project use-profiles     
+          app-store-connect fetch-signing-files "$BUNDLE_ID" --type IOS_APP_STORE --create
+          keychain add-certificates
+          xcode-project use-profiles
       - name: Build IPA
         script: |
-          keychain add-certificates || true
-          security find-identity -v -p codesigning || true
-          PROFILE_FILE=$(find ~/Library -name "*.mobileprovision" | head -1)
-          echo "Perfil: $PROFILE_FILE"
-          security cms -D -i "$PROFILE_FILE" > /tmp/profile.plist
-          PROFILE_NAME=$(/usr/libexec/PlistBuddy -c "Print :Name" /tmp/profile.plist)
-          PROFILE_UUID=$(/usr/libexec/PlistBuddy -c "Print :UUID" /tmp/profile.plist)
-          TEAM_ID=$(/usr/libexec/PlistBuddy -c "Print :TeamIdentifier:0" /tmp/profile.plist)
-          TEAM_ID=6VQD37FLSQ
-          echo "Usando perfil: $PROFILE_NAME"
-          echo "UUID: $PROFILE_UUID"
-          echo "Team real: $TEAM_ID"
-          mkdir -p ~/Library/MobileDevice/Provisioning\ Profiles/
-          rm -rf ~/Library/MobileDevice/Provisioning\ Profiles/*
-          cp "$PROFILE_FILE" ~/Library/MobileDevice/Provisioning\ Profiles/"$PROFILE_UUID".mobileprovision || true
-          ls -lh ~/Library/MobileDevice/Provisioning\ Profiles/ || true
-          cat > /tmp/make_plist.py << 'PY'
-          import plistlib
-          import os
-          name = 'TandaFacil Profile'
-          data = {
-            'method': 'app-store',
-            'signingStyle': 'automatic'
-          }
-          f = open('/tmp/ExportOptions.plist', 'wb')
-          plistlib.dump(data, f)
-          f.close()
-          PY
-          PROFILE_NAME="$PROFILE_NAME" python3 /tmp/make_plist.py
-          plutil -lint /tmp/ExportOptions.plist
-          cat /tmp/ExportOptions.plist
-          python3 -c "import plistlib; p=plistlib.load(open('/tmp/ExportOptions.plist','rb')); p['teamID']='6VQD37FLSQ'; plistlib.dump(p, open('/tmp/ExportOptions.plist','wb'))"
-          xcode-project build-ipa --workspace "$XCODE_PROJECT" --scheme App --export-options-plist /tmp/ExportOptions.plist
-          mkdir -p build/ios/ipa
-          cp $HOME/build/ipa/*.ipa build/ios/ipa/ || true
-          ls -lh build/ios/ipa/
+          xcode-project build-ipa --workspace "$XCODE_PROJECT.xcworkspace" --scheme "$XCODE_SCHEME"
     artifacts:
       - build/ios/ipa/*.ipa
       - /tmp/xcodebuild_logs/*.log
     publishing:
       app_store_connect:
         auth: integration
+        api_key: Codemagic2
         submit_to_testflight: true
