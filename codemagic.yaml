@@ -22,7 +22,9 @@ workflows:
     scripts:
       - name: Fix config and prepare www
         script: |
+          mkdir -p www
           cp index-v8.html www/index.html
+          npm install
           npx cap sync ios
       - name: Set up code signing
         script: |
