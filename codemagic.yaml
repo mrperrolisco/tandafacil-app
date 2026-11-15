@@ -1,16 +1,8 @@
 workflows:
   tandafacil-ios:
     name: TandaFacil iOS
-    max_build_duration: 60
     instance_type: mac_mini_m1
-    environment:
-      vars:
-        XCODE_PROJECT: ios/App/App
-        XCODE_SCHEME: App
-        BUNDLE_ID: com.tandafacil.app
-      xcode: latest
-      cocoapods: default
-      node: 20
+    max_build_duration: 30
     integrations:
       app_store_connect: Codemagic2
     triggering:
@@ -19,6 +11,14 @@ workflows:
       branch_patterns:
         - pattern: main
           include: true
+    environment:
+      vars:
+        BUNDLE_ID: com.tandafacil.app
+        XCODE_SCHEME: App
+        XCODE_WORKSPACE: ios/App/App.xcworkspace
+      node: 20
+      xcode: latest
+      cocoapods: default
     scripts:
       - name: Fix config and prepare www
         script: |
@@ -33,12 +33,12 @@ workflows:
       - name: Set up code signing
         script: |
           keychain initialize
-          app-store-connect fetch-signing-files "$BUNDLE_ID" --type IOS_APP_STORE 
-          keychain add-certificates
+          app-store-connect fetch-signing-files "$BUNDLE_ID" --type IOS_APP_STORE
+          keychain add-certificates --certificate "TandaFacil Distribution"
           xcode-project use-profiles
       - name: Build IPA
         script: |
-          xcode-project build-ipa --workspace "$XCODE_PROJECT.xcworkspace" --scheme "$XCODE_SCHEME"
+          xcode-project build-ipa --workspace "$XCODE_WORKSPACE" --scheme "$XCODE_SCHEME"
     artifacts:
       - build/ios/ipa/*.ipa
       - /tmp/xcodebuild_logs/*.log
