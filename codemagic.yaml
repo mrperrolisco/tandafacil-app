@@ -51,6 +51,14 @@ workflows:
           app-store-connect fetch-signing-files $BUNDLE_ID --type IOS_APP_STORE
           keychain add-certificates
           xcode-project use-profiles
+      - name: Force manual signing
+        script: |
+          PBX="ios/App/App.xcodeproj/project.pbxproj"
+          sed -i '' 's/CODE_SIGN_STYLE = Automatic;/CODE_SIGN_STYLE = Manual;/g' "$PBX" || true
+          sed -i '' 's/DEVELOPMENT_TEAM = "";/DEVELOPMENT_TEAM = 6VQD37FLSQ;/g' "$PBX" || true
+          sed -i '' 's/PRODUCT_BUNDLE_IDENTIFIER = .*/PRODUCT_BUNDLE_IDENTIFIER = com.tandafacil.app;/g' "$PBX" || true
+          grep -n "CODE_SIGN_STYLE\|DEVELOPMENT_TEAM\|PROVISIONING_PROFILE_SPECIFIER" "$PBX" | head -20 || true
+          xcode-project use-profiles --export-method app-store-connect || true
       - name: Set build version
         script: |
           cd ios/App
