@@ -36,11 +36,11 @@ workflows:
           ls -lh www/index.html
       - name: Sync Capacitor iOS
         script: |
-          rm -f capacitor.config.ts
-          if [ ! -f capacitor.config.js ]; then
-            printf "module.exports = {\n  appId: 'com.tandafacil.app',\n  appName: 'TandaFacil',\n  webDir: 'www'\n};\n" > capacitor.config.js
+          rm -f capacitor.config.ts capacitor.config.js capacitor.config.cjs
+          if [ ! -f capacitor.config.json ]; then
+            printf '{\n  "appId": "com.tandafacil.app",\n  "appName": "TandaFacil",\n  "webDir": "www"\n}\n' > capacitor.config.json
           fi
-          cat capacitor.config.js
+          cat capacitor.config.json
           if [ ! -d ios ]; then
             npx cap add ios
           fi
