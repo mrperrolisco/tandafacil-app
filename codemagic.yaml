@@ -45,16 +45,10 @@ workflows:
             npx cap add ios
           fi
           npx cap sync ios
-      - name: Set up code signing
-        script: |
-          keychain initialize
-          app-store-connect fetch-signing-files $BUNDLE_ID --type IOS_APP_STORE --create
-          keychain add-certificates
-          xcode-project use-profiles
-      - name: Force manual signing
+      - name: Force automatic signing
         script: |
           PBX="ios/App/App.xcodeproj/project.pbxproj"
-          sed -i '' 's/CODE_SIGN_STYLE = Automatic;/CODE_SIGN_STYLE = Manual;/g' "$PBX" || true
+          sed -i '' 's/CODE_SIGN_STYLE = Manual;/CODE_SIGN_STYLE = Automatic;/g' "$PBX" || true
           sed -i '' 's/DEVELOPMENT_TEAM = "";/DEVELOPMENT_TEAM = 6VQD37FLSQ;/g' "$PBX" || true
           sed -i '' 's/PRODUCT_BUNDLE_IDENTIFIER = .*/PRODUCT_BUNDLE_IDENTIFIER = com.tandafacil.app;/g' "$PBX" || true
           grep -n "CODE_SIGN_STYLE\|DEVELOPMENT_TEAM" "$PBX" | head -20 || true
