@@ -28,6 +28,8 @@ workflows:
           printf '{"appId":"com.tandafacil.app","appName":"TandaFacil","webDir":"www"}' > capacitor.config.json
           npx cap add ios
           npx cap sync ios
+          sed -i '' 's/CODE_SIGN_STYLE = Automatic;/CODE_SIGN_STYLE = Manual;/g' ios/App/App.xcodeproj/project.pbxproj
+          sed -i '' 's/DEVELOPMENT_TEAM = "";/DEVELOPMENT_TEAM = 6VQD37FLSQ;/g' ios/App/App.xcodeproj/project.pbxproj
       - name: Set up code signing
         script: |
           keychain initialize
