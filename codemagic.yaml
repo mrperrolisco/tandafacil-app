@@ -25,6 +25,7 @@ workflows:
           mkdir -p www
           cp index-v8.html www/index.html
           npm install
+          printf '{"appId":"com.tandafacil.app","appName":"TandaFacil","webDir":"www"}' > capacitor.config.json
           npx cap add ios
           npx cap sync ios
       - name: Set up code signing
