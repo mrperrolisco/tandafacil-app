@@ -1,47 +1,62 @@
 workflows:
   tandafacil-ios:
     name: TandaFacil iOS
-    instance_type: mac_mini_m1
-    max_build_duration: 30
+    max_build_duration: 120
+    instance_type: mac_mini_m2
     integrations:
       app_store_connect: Codemagic2
+    environment:
+      groups:
+        - tandafacil
+      vars:
+        XCODE_WORKSPACE: "ios/App/App.xcworkspace"
+        XCODE_SCHEME: "App"
+        BUNDLE_ID: "com.tandafacil.app"
+        APPLE_TEAM_ID: "6VQD37FLSQ"
+        APP_NAME: "TandaFacil"
     triggering:
       events:
         - push
       branch_patterns:
         - pattern: main
           include: true
-    environment:
-      vars:
-        BUNDLE_ID: com.tandafacil.app
-        XCODE_SCHEME: App
-        XCODE_WORKSPACE: ios/App/App.xcworkspace
-      node: 20
-      xcode: latest
-      cocoapods: default
+          source: true
     scripts:
-      - name: Fix config and prepare www
+      - name: Set up Node
+        script: |
+          node --version
+          npm --version
+      - name: Install dependencies
+        script: |
+          npm install
+      - name: Build web
         script: |
           mkdir -p www
           cp index-v8.html www/index.html
-          npm install
-          printf '{"appId":"com.tandafacil.app","appName":"TandaFacil","webDir":"www"}' > capacitor.config.json
-          npx cap add ios
+          ls -lh www/index.html
+      - name: Sync Capacitor iOS
+        script: |
           npx cap sync ios
-          sed -i '' 's/CODE_SIGN_STYLE = Automatic;/CODE_SIGN_STYLE = Manual;/g' ios/App/App.xcodeproj/project.pbxproj
-          sed -i '' 's/DEVELOPMENT_TEAM = "";/DEVELOPMENT_TEAM = 6VQD37FLSQ;/g' ios/App/App.xcodeproj/project.pbxproj
       - name: Set up code signing
         script: |
           keychain initialize
-          app-store-connect fetch-signing-files "$BUNDLE_ID" --type IOS_APP_STORE --create
+          app-store-connect fetch-signing-files $BUNDLE_ID --type IOS_APP_STORE
           keychain add-certificates
           xcode-project use-profiles
+      - name: Set build version
+        script: |
+          cd ios/App
+          agvtool new-version -all $PROJECT_BUILD_NUMBER
+          cd ../..
       - name: Build IPA
         script: |
-          xcode-project build-ipa --workspace "$XCODE_WORKSPACE" --scheme "$XCODE_SCHEME"
+          xcode-project build-ipa \
+            --workspace "$XCODE_WORKSPACE" \
+            --scheme "$XCODE_SCHEME" \
+            --config Release
     artifacts:
       - build/ios/ipa/*.ipa
-      - /tmp/xcodebuild_logs/*.log
+      - /tmp/*.log
     publishing:
       app_store_connect:
         auth: integration
