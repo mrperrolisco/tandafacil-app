@@ -64,9 +64,13 @@ workflows:
       - name: Set up code signing
         script: |
           keychain initialize
-          app-store-connect fetch-signing-files $BUNDLE_ID --type IOS_APP_STORE --create
+          app-store-connect fetch-signing-files $BUNDLE_ID --type IOS_APP_STORE --certificate "TandaFacil Distribution" --profile "TandaFacil Profile"
+          echo "--- PROFILES BAJADOS ---"
+          ls -lh ~/Library/MobileDevice/Provisioning\ Profiles/ || echo "NO HAY CARPETA DE PERFILES"
           keychain add-certificates
           xcode-project use-profiles
+          echo "--- CHECK PBX DESPUES DE USE-PROFILES ---"
+          grep -n "PROVISIONING_PROFILE\|CODE_SIGN_STYLE\|DEVELOPMENT_TEAM" ios/App/App.xcodeproj/project.pbxproj | head -30 || true
       - name: Set build version
         script: |
           cd ios/App
