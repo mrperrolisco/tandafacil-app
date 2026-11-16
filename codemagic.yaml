@@ -64,6 +64,17 @@ workflows:
               if "CODE_SIGN_STYLE" in line or "DEVELOPMENT_TEAM" in line:
                   print(line.strip())
           PY
+      - name: Set export compliance
+        script: |
+          python3 << 'PY'
+          import plistlib, pathlib
+          for f in ["ios/App/App/Info.plist"]:
+              p = pathlib.Path(f)
+              d = plistlib.load(open(p, 'rb'))
+              d['ITSAppUsesNonExemptEncryption'] = False
+              plistlib.dump(d, open(p, 'wb'))
+              print(f, "ITSAppUsesNonExemptEncryption =", d['ITSAppUsesNonExemptEncryption'])
+          PY
       - name: Set up code signing
         script: |
           keychain initialize
