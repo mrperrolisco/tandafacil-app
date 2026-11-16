@@ -47,11 +47,24 @@ workflows:
           npx cap sync ios
       - name: Force automatic signing
         script: |
-          PBX="ios/App/App.xcodeproj/project.pbxproj"
-          sed -i '' 's/CODE_SIGN_STYLE = Manual;/CODE_SIGN_STYLE = Automatic;/g' "$PBX" || true
-          sed -i '' 's/DEVELOPMENT_TEAM = "";/DEVELOPMENT_TEAM = 6VQD37FLSQ;/g' "$PBX" || true
-          sed -i '' 's/PRODUCT_BUNDLE_IDENTIFIER = .*/PRODUCT_BUNDLE_IDENTIFIER = com.tandafacil.app;/g' "$PBX" || true
-          grep -n "CODE_SIGN_STYLE\|DEVELOPMENT_TEAM" "$PBX" | head -20 || true
+          python3 << 'PY'
+          import pathlib, re
+          p = pathlib.Path("ios/App/App.xcodeproj/project.pbxproj")
+          t = p.read_text()
+          # Poner Automatic en todos lados
+          t = t.replace("CODE_SIGN_STYLE = Manual;", "CODE_SIGN_STYLE = Automatic;")
+          # Si no hay CODE_SIGN_STYLE, no pasa nada, lo pasamos por xcodebuild
+          # Poner el equipo: si está vacío, ponerlo. Si ya tiene uno, reemplazarlo.
+          t = re.sub(r'DEVELOPMENT_TEAM = "[^"]*";', 'DEVELOPMENT_TEAM = 6VQD37FLSQ;', t)
+          # Si no había ninguna línea DEVELOPMENT_TEAM, agregar una después de CODE_SIGN_STYLE
+          if "DEVELOPMENT_TEAM = 6VQD37FLSQ;" not in t:
+              t = t.replace("CODE_SIGN_STYLE = Automatic;", "CODE_SIGN_STYLE = Automatic;\n\t\t\t\tDEVELOPMENT_TEAM = 6VQD37FLSQ;")
+          p.write_text(t)
+          print("--- CHECK ---")
+          for line in t.splitlines():
+              if "CODE_SIGN_STYLE" in line or "DEVELOPMENT_TEAM" in line:
+                  print(line.strip())
+          PY
       - name: Set build version
         script: |
           cd ios/App
@@ -62,7 +75,7 @@ workflows:
           mkdir -p build/ios/ipa
           python3 -c "import plistlib; plistlib.dump({'method':'app-store-connect','teamID':'6VQD37FLSQ','signingStyle':'automatic','uploadBitcode':False,'uploadSymbols':True,'compileBitcode':False}, open('ExportOptions.plist','wb'))"
           cat ExportOptions.plist
-          xcodebuild -workspace "$XCODE_WORKSPACE" -scheme "$XCODE_SCHEME" -configuration Release -destination "generic/platform=iOS" -archivePath build/ios/App.xcarchive -allowProvisioningUpdates archive
+          xcodebuild -workspace "$XCODE_WORKSPACE" -scheme "$XCODE_SCHEME" -configuration Release -destination "generic/platform=iOS" -archivePath build/ios/App.xcarchive -allowProvisioningUpdates DEVELOPMENT_TEAM=6VQD37FLSQ CODE_SIGN_STYLE=Automatic PRODUCT_BUNDLE_IDENTIFIER=com.tandafacil.app archive
           xcodebuild -exportArchive -archivePath build/ios/App.xcarchive -exportPath build/ios/ipa -exportOptionsPlist ExportOptions.plist -allowProvisioningUpdates
           ls -lh build/ios/ipa/
     artifacts:
