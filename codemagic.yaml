@@ -64,12 +64,13 @@ workflows:
       - name: Set up code signing
         script: |
           keychain initialize
-          app-store-connect fetch-signing-files $BUNDLE_ID --type IOS_APP_STORE --certificate "TandaFacil Distribution" --profile "TandaFacil Profile"
+          app-store-connect fetch-signing-files $BUNDLE_ID --type IOS_APP_STORE
           echo "--- PROFILES BAJADOS ---"
           ls -lh ~/Library/MobileDevice/Provisioning\ Profiles/
           PROFILE_FILE=$(ls ~/Library/MobileDevice/Provisioning\ Profiles/*.mobileprovision | head -1)
           echo "PROFILE_FILE=$PROFILE_FILE"
-          PROFILE_UUID=$(security cms -D -i "$PROFILE_FILE" | /usr/libexec/PlistBuddy -c "Print :UUID" /dev/stdin)
+          security cms -D -i "$PROFILE_FILE" > /tmp/profile.plist
+          PROFILE_UUID=$(python3 -c "import plistlib; print(plistlib.load(open('/tmp/profile.plist','rb'))['UUID'])")
           echo "PROFILE_UUID=$PROFILE_UUID"
           echo "$PROFILE_UUID" > profile_uuid.txt
           cat profile_uuid.txt
