@@ -1,95 +1,211 @@
-<!DOCTYPE html>
-<html lang="es"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>TandaFacil</title><style>
-*{box-sizing:border-box}body{font-family:-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,sans-serif;margin:0;background:#f6f7f9;color:#111}
-header{background:#111;color:#fff;padding:18px 16px}header h1{margin:0;font-size:22px}header p{margin:4px 0 0;opacity:.8;font-size:13px}
-main{padding:16px;max-width:640px;margin:0 auto;padding-bottom:90px}
-.card{background:#fff;border-radius:16px;padding:16px;box-shadow:0 2px 12px rgba(0,0,0,.06);margin-bottom:14px}
-label{font-size:12px;font-weight:700;color:#555}input,select{width:100%;padding:12px;border:1px solid #ddd;border-radius:10px;margin:6px 0 12px;font-size:16px}
-.btn{width:100%;padding:14px;border:0;border-radius:12px;font-weight:800;font-size:16px;cursor:pointer}
-.btn-green{background:#16a34a;color:#fff}.btn-black{background:#111;color:#fff}.btn-ghost{background:#eee;color:#111}
-.tanda{display:flex;justify-content:space-between;gap:10px;align-items:center}.tanda b{font-size:16px}.small{font-size:13px;color:#666}
-.part{border:1px solid #eee;border-radius:12px;padding:12px;display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
-.pill{padding:6px 10px;border-radius:999px;font-size:12px;font-weight:800}.pagado{background:#dcfce7;color:#166534}.vencido{background:#fee2e2;color:#991b1b}.recibe{background:#111;color:#fff}
-.row{display:flex;gap:8px}.row>*{flex:1}
-.footer{text-align:center;color:#777;font-size:12px;margin-top:10px}
-.modal{position:fixed;inset:0;background:rgba(0,0,0,.5);display:none;align-items:flex-end}.modal.open{display:flex}.sheet{background:#fff;width:100%;border-radius:20px 20px 0 0;padding:18px;max-height:85vh;overflow:auto}
-textarea{width:100%;min-height:110px;padding:12px;border:1px solid #ddd;border-radius:10px}
-</style></head><body>
-<header><h1>TandaFacil</h1><p>Crear Tanda - Guardado FUERTE en el iPhone - v8</p></header>
-<main>
-<div class="card"><h2 style="margin:0 0 10px">Crear Tanda</h2>
-<label>NOMBRE DE LA TANDA</label><input id="nombre" placeholder="Ej: Tanda de Lili" value="Tanda de la Cuadra - Dona Mary">
-<div class="row"><div><label>MONTO ($)</label><input id="monto" type="number" value="500"></div><div><label># PARTICIPANTES</label><input id="npart" type="number" value="5"></div></div>
-<label>FRECUENCIA</label><select id="frec"><option>Semanal</option><option>Quincenal</option><option>Mensual</option></select>
-<label>FECHA INICIO</label><input id="fecha" type="date" value="2026-11-14">
-<label>ORDEN</label><select id="orden"><option value="registro">En orden de registro</option><option value="sortear">Sortear</option></select>
-<label>PARTICIPANTES (separados por coma)</label><input id="parts" value="Dona Mary, Don Jose, Karen, Beto, Lupita">
-<button class="btn btn-green" onclick="crear()">Crear - Tarjeta Credito/Debito incluida</button></div>
-<div id="lista"></div>
-<div class="card" id="detalle" style="display:none"></div>
-<div class="footer">TandaFacil v8 - Guardado FUERTE - No se borra al actualizar ni al cerrar</div>
-</main>
-<div class="modal" id="modal"><div class="sheet" id="sheet"></div></div>
+<html lang="es"><head><style>
+@font-face {
+  font-family: "Optimistic";
+  font-style: normal;
+  font-weight: 400 600;
+  font-display: swap;
+  src: url("/fonts/OptimisticAI_VF_Optimized.woff2") format("woff2");
+}
+@font-face {
+  font-family: "Optimistic Mono";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("/fonts/OptimisticMono_W_TextRegular.woff2") format("woff2");
+}
+:where(html) {
+  font-family: "Optimistic", system-ui, sans-serif;
+}
+:where(code, pre, kbd, samp) {
+  font-family: "Optimistic Mono", ui-monospace, monospace;
+}
+</style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>TandaFácil - Tandas y Cundinas</title>
+<style>
+*{box-sizing:border-box;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial}
+body{margin:0;background:#f2f7f2;color:#1a2b1a;padding-bottom:110px}
+header{background:#16a34a;color:#fff;padding:22px 18px 16px;position:sticky;top:0;z-index:10}
+header h1{margin:0;font-size:26px} header p{margin:4px 0 0;opacity:.9}
+.pill{display:inline-block;background:#facc15;color:#422006;padding:6px 12px;border-radius:999px;font-weight:800;font-size:13px;margin-top:10px}
+.card{background:#fff;margin:14px;border-radius:18px;padding:16px;box-shadow:0 4px 14px rgba(0,0,0,.06)}
+h2{margin:0 0 8px;font-size:19px} h3{margin:10px 0 6px}
+label{font-size:13px;font-weight:700;display:block;margin:12px 0 5px}
+input,select{width:100%;padding:12px;border:1px solid #d1d5db;border-radius:12px;font-size:16px}
+button{width:100%;padding:14px;border:0;border-radius:14px;font-size:16px;font-weight:800;cursor:pointer}
+.btn-green{background:#16a34a;color:#fff} .btn-yellow{background:#facc15;color:#422006} .btn-outline{background:#fff;border:2px solid #16a34a;color:#16a34a}
+.row{display:flex;gap:10px} .row button{flex:1}
+.badge{font-size:12px;padding:5px 9px;border-radius:999px;font-weight:800}
+.paid{background:#dcfce7;color:#166534} .pend{background:#fef3c7;color:#92400e}
+.part{display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid #f0f0f0}
+.small{font-size:13px;color:#666} .big{font-size:32px;font-weight:900} .center{text-align:center}
+.pro-box{background:#fef9c3;border:2px dashed #eab308}
+.pro-opt{border:2px solid #e5e7eb;border-radius:14px;padding:12px;margin:10px 0;cursor:pointer}
+.pro-opt.sel{border-color:#16a34a;background:#f0fdf4}
+.price{font-size:22px;font-weight:900}
+.lock{font-size:13px;background:#fef3c7;padding:8px 10px;border-radius:10px;margin-top:10px}
+.hidden{display:none}
+</style>
+</head>
+<body>
+<header>
+<h1>🐷 TandaFácil <span style="font-size:14px">v8 PRO</span></h1>
+<p>Organiza tu tanda sin cuaderno, sin WhatsApp, sin pleitos.</p>
+<div id="planPill" class="pill">Plan Gratis: 1 de 2 tandas usadas</div>
+</header>
+
+<div class="card">
+<h2>👋 ¡Hola, Pedro!</h2>
+<p class="small">Tanda de ejemplo: <b>Tanda de la Cuadra - Doña Mary</b> • $500 por ronda • 5 personas • Bote total $2,500 • Semanal • Inicio 15-nov</p>
+<div class="center"><div class="big">$2,500</div><div class="small">Bote total de esta tanda</div></div>
+<div style="margin-top:12px">
+<div class="part"><span>Ana M.</span><span><span class="badge paid">✓ Pagado</span></span></div>
+<div class="part"><span>Luis R.</span><span><span class="badge paid">✓ Pagado</span></span></div>
+<div class="part"><span>Doña Mary</span><span><span class="badge paid">✓ Pagado</span></span></div>
+<div class="part"><span>Carlos J.</span><span><span class="badge pend">⏳ Pendiente</span></span></div>
+<div class="part"><span>Pedro G. (Tú)</span><span><span class="badge paid">✓ Pagado</span></span></div>
+</div>
+<p class="small">💡 El dinero de la tanda te llega directo de tus participantes. TandaFácil no guarda tu dinero.</p>
+</div>
+
+<div class="card pro-box" id="proCard">
+<h2>⭐ Hazte PRO - Menos que un taco</h2>
+<p class="small">Tandas ilimitadas, hasta 50 personas, multas automáticas, recordatorios.</p>
+<div class="pro-opt sel" id="optMensual" onclick="selectPlan('mensual')">
+<div style="display:flex;justify-content:space-between"><b>PRO Mensual</b><span class="price">$1.99 / mes</span></div>
+<div class="small">Menos que un taco. Cancela cuando quieras.</div>
+<div class="small">ID: tandafacil_pro_mensual</div>
+</div>
+<div class="pro-opt" id="optAnual" onclick="selectPlan('anual')">
+<div style="display:flex;justify-content:space-between"><b>PRO Anual ⭐ Ahorra 37%</b><span class="price">$14.99 / año</span></div>
+<div class="small">Solo $1.25 por mes. El más barato.</div>
+<div class="small">ID: tandafacil_pro_anual</div>
+</div>
+<button class="btn-green" onclick="buyPro()">⭐ Hazte PRO con Apple</button>
+<button class="btn-outline" style="margin-top:10px" onclick="restorePurchases()">↻ Restaurar compra</button>
+<p class="small" id="proStatus">Tu pago es con Apple, seguro. En TestFlight no cobra dinero real, es prueba.</p>
+<div id="proMsg" class="lock hidden"></div>
+</div>
+
+<div class="card">
+<h2>➕ Crear nueva tanda</h2>
+<label>Nombre de la tanda</label><input id="nombre" value="Tanda de la Cuadra" placeholder="Ej: Tanda de la familia">
+<div class="row"><div style="flex:1"><label>Monto por persona ($)</label><input id="monto" type="number" value="500"></div>
+<div style="flex:1"><label>Personas</label><input id="personas" type="number" value="5"></div></div>
+<label>Frecuencia</label><select id="freq"><option>Semanal</option><option>Quincenal</option><option>Mensual</option></select>
+<button class="btn-yellow" style="margin-top:14px" onclick="crearTanda()">Crear Tanda</button>
+<div id="crearMsg" class="lock hidden"></div>
+</div>
+
+<div class="card">
+<h2>📋 Mis Tandas</h2>
+<div id="listaTandas"><div class="part"><span><b>Tanda de la Cuadra - Doña Mary</b><br><span class="small">$500 • 5 personas • $2,500 bote</span></span><span class="badge paid">Activa</span></div></div>
+<p class="small">Plan Gratis: puedes crear hasta 2 tandas. Con PRO: ilimitadas.</p>
+</div>
+
 <script>
-let tandas=[];
-let KEY='tandafacil_v8';
-// 1. Intenta guardar en 3 lugares a la vez para que no se pierda
-function save(){
-  let j=JSON.stringify(tandas);
-  try{localStorage.setItem(KEY,j);}catch(e){}
-  try{localStorage.setItem('tandafacil_v7',j);}catch(e){}
-  try{sessionStorage.setItem(KEY,j);}catch(e){}
-  // Cookie como respaldo, dura 365 dias
-  try{document.cookie=KEY+'='+encodeURIComponent(j)+';max-age=31536000;path=/';}catch(e){}
-  render();
+// TandaFacil v8 - PRO con StoreKit / Apple
+// Product IDs reales en App Store Connect:
+const PRODUCTS = {
+  mensual: 'tandafacil_pro_mensual',
+  anual: 'tandafacil_pro_anual'
+};
+let selectedPlan = 'mensual';
+let isPro = localStorage.getItem('tandafacil_pro') === '1';
+let tandasCreadas = 1; // 1 usada en demo
+
+function updateUI(){
+  const pill = document.getElementById('planPill');
+  const proCard = document.getElementById('proCard');
+  if(isPro){
+    pill.textContent = '⭐ PRO ACTIVO - Tandas ilimitadas';
+    pill.style.background = '#16a34a'; pill.style.color = '#fff';
+    proCard.innerHTML = '<h2>⭐ ¡Ya eres PRO!</h2><p>Gracias por apoyar TandaFácil. Tienes tandas ilimitadas, 50 personas, multas automáticas.</p><p class="small">Si cambias de iPhone, dale a Restaurar compra en cualquier teléfono con tu mismo Apple ID.</p><button class="btn-green" onclick="restorePurchases()">↻ Restaurar compra</button>';
+  }
 }
-function load(){
-  let j=null;
-  try{j=localStorage.getItem(KEY)||localStorage.getItem('tandafacil_v7');}catch(e){}
-  if(!j){try{let m=document.cookie.match(new RegExp(KEY+'=([^;]+)')); if(m) j=decodeURIComponent(m[1]);}catch(e){}}
-  if(j){try{tandas=JSON.parse(j);}catch(e){tandas=[];}}
+function selectPlan(plan){
+  selectedPlan = plan;
+  document.getElementById('optMensual').classList.toggle('sel', plan==='mensual');
+  document.getElementById('optAnual').classList.toggle('sel', plan==='anual');
 }
-function crear(){
-  let nombre=document.getElementById('nombre').value.trim()||'Mi Tanda';
-  let monto=parseFloat(document.getElementById('monto').value)||500;
-  let frec=document.getElementById('frec').value;
-  let fecha=document.getElementById('fecha').value||new Date().toISOString().slice(0,10);
-  let orden=document.getElementById('orden').value;
-  let parts=document.getElementById('parts').value.split(',').map(s=>s.trim()).filter(Boolean);
-  if(orden==='sortear'){parts=[...parts].sort(()=>Math.random()-0.5);}
-  let ps=parts.map((n,i)=>({nombre:n,telefono:i===0?'5512345678':'',estado:'vencido',ronda:1}));
-  tandas.unshift({id:Date.now(),nombre,monto,frec,fecha,parts:ps,bote:monto*parts.length});
-  save(); alert('Tanda creada y guardada en v8'); window.scrollTo({top:0,behavior:'smooth'});
+function showMsg(text){
+  const el = document.getElementById('proMsg');
+  el.classList.remove('hidden'); el.textContent = text;
 }
-function render(){
-  let el=document.getElementById('lista');
-  if(!tandas.length){el.innerHTML='<div class="card">Aun no tienes tandas. Crea la primera arriba</div>';return;}
-  el.innerHTML=tandas.map((t,i)=>`<div class="card tanda"><div><b>${t.nombre}</b><div class="small">$${t.monto} por ronda - ${t.parts.length} participantes - Bote total <b>$${t.bote}</b><br>${t.frec} - ${t.fecha}</div></div><button class="btn btn-black" style="width:auto;padding:10px 14px" onclick="ver(${i})">-</button></div>`).join('');
+function buyPro(){
+  const productId = PRODUCTS[selectedPlan];
+  const nombre = selectedPlan === 'mensual' ? 'PRO Mensual $1.99 / mes' : 'PRO Anual $14.99 / año';
+  showMsg('Abriendo pago de Apple para ' + nombre + '... Si estás en TestFlight, Apple te dará una compra de prueba, no cobra dinero real.');
+  // 1. Si la app nativa (Swift / Capacitor) expone el puente, lo usa - ESTE ES EL REAL
+  try{
+    if(window.webkit && window.webkit.messageHandlers && window.webkit.messageHandlers.storekit){
+      window.webkit.messageHandlers.storekit.postMessage({action:'purchase', productId: productId});
+      return;
+    }
+    if(window.StoreKitBridge && window.StoreKitBridge.purchase){
+      window.StoreKitBridge.purchase(productId);
+      return;
+    }
+  }catch(e){}
+  // 2. Fallback para probar en TestFlight / navegador: simula la ventana de Apple y pide confirmación
+  // En producción con el wrapper nativo, el paso 1 es el que se usa.
+  setTimeout(()=>{
+    const ok = confirm('APPLE - SANDBOX / TESTFLIGHT\n\nTandaFácil PRO\n' + nombre + '\n\n¿Quieres suscribirte? (En TestFlight NO cobra dinero real)\n\nDale Aceptar para activar PRO de prueba.');
+    if(ok){
+      isPro = true;
+      localStorage.setItem('tandafacil_pro','1');
+      localStorage.setItem('tandafacil_pro_id', productId);
+      updateUI();
+      alert('¡Felicidades! Ya eres PRO ⭐ Ahora puedes crear tandas ilimitadas.');
+    }
+  }, 400);
 }
-function ver(i){
-  let t=tandas[i]; let d=document.getElementById('detalle'); d.style.display='block';
-  let rec=t.parts[0];
-  d.innerHTML=`<button class="btn btn-ghost" onclick="document.getElementById('detalle').style.display='none'">Volver</button>
-  <h2 style="margin:12px 0 4px">${t.nombre}</h2><p class="small">Bote total $${t.bote} - ${t.frec} - Inicio ${t.fecha}</p>
-  <div class="part"><div><b>${rec.nombre}</b><div class="small">${rec.telefono||''}</div></div><span class="pill recibe">RECIBE $${t.bote}</span></div>
-  ${t.parts.map((p,pi)=>`<div class="part"><div><b>${p.nombre}</b><div class="small">${p.estado==='pagado'?'Pagado':'Vencido +$50'}</div></div>${pi===0?'<span class="pill recibe">RECIBE</span>':`<button class="btn ${p.estado==='pagado'?'btn-green':'btn-black'}" style="width:auto;padding:8px 12px;font-size:13px" onclick="cobro(${i},${pi})">${p.estado==='pagado'?'Pagado':'Vencido +$50'}</button>`}</div>`).join('')}
-  <button class="btn btn-ghost" onclick="if(confirm('Borrar esta tanda?')){tandas.splice(${i},1);save();document.getElementById('detalle').style.display='none'}">Borrar tanda</button>`;
-  window.scrollTo({top:d.offsetTop-10,behavior:'smooth'});
+function restorePurchases(){
+  try{
+    if(window.webkit && window.webkit.messageHandlers && window.webkit.messageHandlers.storekit){
+      window.webkit.messageHandlers.storekit.postMessage({action:'restore'});
+      showMsg('Buscando tus compras con Apple...');
+      return;
+    }
+  }catch(e){}
+  if(localStorage.getItem('tandafacil_pro')==='1'){
+    isPro = true; updateUI(); alert('Compra restaurada. ¡Ya eres PRO!');
+  } else {
+    alert('No encontramos una compra PRO con este Apple ID. Si ya pagaste en otro iPhone, asegúrate de usar el mismo Apple ID.');
+  }
 }
-function cobro(ti,pi){
-  let t=tandas[ti], p=t.parts[pi];
-  let base=t.monto, multa=p.estado==='pagado'?0:50, sub=base+multa, com=+(sub*0.03+0.30).toFixed(2), total=+(sub+com).toFixed(2);
-  let link=`https://buy.stripe.com/test_123456?amount=${Math.round(total*100)}`;
-  let msg=`Hola ${p.nombre}! Te toca pagar $${total.toFixed(2)} de la tanda "${t.nombre}" (Ronda 1 incluye multa $${multa} incluye comision tarjeta $${com.toFixed(2)}). Paga con Tarjeta: ${link} Gracias!`;
-  let m=document.getElementById('modal'); m.classList.add('open');
-  document.getElementById('sheet').innerHTML=`<h2>Generar cobro - ${p.nombre}</h2>
-  <p>MONTO BASE + MULTA $${multa} = <b>$${sub.toFixed(2)}</b><br>Comision tarjeta (3% + $0.30) = $${com.toFixed(2)}<br><b>TOTAL A COBRAR = $${total.toFixed(2)}</b></p>
-  <p style="background:#fef9c3;padding:10px;border-radius:10px;font-size:13px">El cliente paga la comision, a ti te llegan $${sub.toFixed(2)} completos</p>
-  <label>LINK DE PAGO</label><input readonly value="${link}"><button class="btn btn-black" onclick="navigator.clipboard.writeText('${link}');alert('Link copiado')">Copiar</button><br><br>
-  <label>MENSAJE DE WHATSAPP</label><textarea readonly id="msg">${msg}</textarea><button class="btn btn-green" onclick="navigator.clipboard.writeText(document.getElementById('msg').value);alert('Mensaje copiado')">Copiar mensaje</button><br><br>
-  <button class="btn btn-green" onclick="marcar(${ti},${pi})">Marcar pagado</button><br><br><button class="btn btn-ghost" onclick="document.getElementById('modal').classList.remove('open')">Cerrar</button>`;
+// Llamado desde Swift cuando Apple confirma la compra real
+window.onProPurchaseSuccess = function(productId){
+  isPro = true; localStorage.setItem('tandafacil_pro','1'); localStorage.setItem('tandafacil_pro_id', productId); updateUI();
+  alert('¡Pago confirmado por Apple! Ya eres PRO ⭐');
+};
+window.onProPurchaseFailed = function(){
+  showMsg('No se pudo completar el pago. Inténtalo de nuevo.');
+};
+function crearTanda(){
+  const nombre = document.getElementById('nombre').value || 'Mi Tanda';
+  const monto = parseInt(document.getElementById('monto').value||'500');
+  const personas = parseInt(document.getElementById('personas').value||'5');
+  const el = document.getElementById('crearMsg');
+  if(!isPro && tandasCreadas >= 2){
+    el.classList.remove('hidden');
+    el.textContent = 'Ya usaste tus 2 tandas gratis. Hazte PRO por $1.99 (menos que un taco) para crear tandas ilimitadas.';
+    document.getElementById('proCard').scrollIntoView({behavior:'smooth'});
+    return;
+  }
+  tandasCreadas++;
+  const total = monto * personas;
+  const div = document.createElement('div');
+  div.className = 'part';
+  div.innerHTML = '<span><b>'+nombre+'</b><br><span class="small">$'+monto+' • '+personas+' personas • $'+total+' bote</span></span><span class="badge paid">Activa</span>';
+  document.getElementById('listaTandas').appendChild(div);
+  el.classList.remove('hidden');
+  el.textContent = '¡Tanda creada! Bote total: $' + total + '. Comparte el link con tus participantes.';
+  document.getElementById('planPill').textContent = isPro ? '⭐ PRO ACTIVO - Tandas ilimitadas' : 'Plan Gratis: ' + tandasCreadas + ' de 2 tandas usadas';
 }
-function marcar(ti,pi){tandas[ti].parts[pi].estado='pagado'; save(); document.getElementById('modal').classList.remove('open'); ver(ti);}
-load(); render();
-</script></body></html>
+updateUI();
+</script>
+<script>(function(){var loc=location.href.replace(/#.*$/,"");var ATTR_NAMES=["data-product-id","data-productid","data-product_id","product-id","productid","product_id","data-source-entity-id","source-entity-id","source_entity_id","data-product","data-metadata","data-meta"];var DATASET_KEYS=["productId","productid","product_id","sourceEntityId","sourceentityid","source_entity_id","product","metadata","meta"];function readProductId(value){if(typeof value!=="string"||value.length===0)return null;if(/^[0-9]{6,}$/.test(value))return value;var match=value.match(/(?:product(?:_|-)?id|source(?:_|-)?entity(?:_|-)?id)["'=:\s]+([0-9]{6,})/i);return match?match[1]:null}function extractProductId(start){for(var node=start;node&&node!==document.body;node=node.parentElement){for(var i=0;i<ATTR_NAMES.length;i++){var attrValue=node.getAttribute&&node.getAttribute(ATTR_NAMES[i]);var attrProductId=readProductId(attrValue);if(attrProductId)return attrProductId}var dataset=node.dataset||null;if(dataset){for(var j=0;j<DATASET_KEYS.length;j++){var dataValue=dataset[DATASET_KEYS[j]];var dataProductId=readProductId(dataValue);if(dataProductId)return dataProductId}}}return null}function isInlineMediaSlotElement(node){return !!(node&&node.getAttribute&&node.getAttribute("data-clippy-inline-media-slot")!==null)}function findInlineMediaSlot(start){for(var node=start;node&&node!==document.body;node=node.parentElement){if(isInlineMediaSlotElement(node))return node}return null}function readInlineMediaUrl(node){if(!node)return null;return node.getAttribute&&((node.getAttribute("data-clippy-inline-media-url")||node.getAttribute("data-url")||node.getAttribute("data_url")))||node.href||null}function stripHash(url){return String(url).replace(/#.*$/,"")}function urlsMatch(a,b){if(!a||!b)return false;try{return stripHash(new URL(a,loc).href)===stripHash(new URL(b,loc).href)}catch(_){return stripHash(a)===stripHash(b)}}function isFirstPartyReelUrl(value){try{var url=new URL(value,loc);if(url.protocol!=="https:")return false;var host=url.hostname.toLowerCase();var supported=host==="instagram.com"||host.endsWith(".instagram.com")||host==="facebook.com"||host.endsWith(".facebook.com");return supported&&/\/reels?\//i.test(url.pathname)}catch(_){return false}}function isInlineMediaUrlClick(node,href){var slot=findInlineMediaSlot(node);if(!slot)return false;var slotUrl=readInlineMediaUrl(slot);if(slotUrl)return urlsMatch(href,slotUrl);return isFirstPartyReelUrl(href)}function findDataHref(start){for(var node=start;node&&node!==document.body;node=node.parentElement){if(node.getAttribute){var href=node.getAttribute("data-href")||node.getAttribute("data-url");if(href)return{href:href,node:node}}}return null}var nativeOpen=window.open;window.open=function(url){if(parent!==window&&typeof url==="string"&&/^https?:\/\//.test(url)){parent.postMessage({type:"ecto:usercontent-link-click",href:url},"*");return null}return nativeOpen?nativeOpen.apply(window,arguments):null};document.addEventListener("click",function(e){var target=e.target instanceof Element?e.target:null;if(!target)return;if(parent===window)return;var a=target.closest?target.closest("a[href]"):null;if(a&&a.href&&/^https?:\/\//.test(a.href)&&a.href.replace(/#.*$/,"")!==loc){if(isInlineMediaUrlClick(a,a.href))return;var productId=extractProductId(target)||extractProductId(a);if(productId){e.preventDefault();parent.postMessage({type:"ecto-artifact-link-click",productId:productId},"*");return}e.preventDefault();parent.postMessage({type:"ecto:usercontent-link-click",href:a.href},"*");return}var dataHref=findDataHref(target);if(dataHref&&/^https?:\/\//.test(dataHref.href)&&dataHref.href.replace(/#.*$/,"")!==loc){if(isInlineMediaUrlClick(dataHref.node,dataHref.href))return;e.preventDefault();parent.postMessage({type:"ecto:usercontent-link-click",href:dataHref.href},"*")}},true)})();</script><script>(function(){var FOCUS_TYPE="ecto:artifact-focus-request";var CLOSE_TYPE="ecto:artifact-close-request";function focusArtifactDocument(){var body=document.body;if(!body)return;try{window.focus();}catch(e){}if(!body.hasAttribute("tabindex"))body.setAttribute("tabindex","-1");try{body.focus({preventScroll:true});}catch(e){try{body.focus();}catch(e2){}}}window.addEventListener("message",function(event){if(event.source!==window.parent)return;var data=event.data;if(!data||typeof data!=="object"||data.type!==FOCUS_TYPE)return;if(document.readyState==="loading"){document.addEventListener("DOMContentLoaded",focusArtifactDocument,{once:true});return;}focusArtifactDocument();});window.addEventListener("keydown",function(event){if(event.key!=="Escape")return;window.setTimeout(function(){if(event.defaultPrevented)return;window.parent.postMessage({type:CLOSE_TYPE},"*");},0);});})();</script>
+
+</body></html>
