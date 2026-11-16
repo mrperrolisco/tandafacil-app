@@ -45,12 +45,6 @@ workflows:
             npx cap add ios
           fi
           npx cap sync ios
-      - name: Set up code signing
-        script: |
-          keychain initialize
-          app-store-connect fetch-signing-files $BUNDLE_ID --type IOS_APP_STORE --create
-          keychain add-certificates
-          xcode-project use-profiles
       - name: Force manual signing
         script: |
           python3 << 'PY'
@@ -67,6 +61,12 @@ workflows:
               if "CODE_SIGN_STYLE" in line or "DEVELOPMENT_TEAM" in line:
                   print(line.strip())
           PY
+      - name: Set up code signing
+        script: |
+          keychain initialize
+          app-store-connect fetch-signing-files $BUNDLE_ID --type IOS_APP_STORE --create
+          keychain add-certificates
+          xcode-project use-profiles
       - name: Set build version
         script: |
           cd ios/App
