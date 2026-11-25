@@ -83,34 +83,18 @@ workflows:
           echo "✅ Code signing ready"
       - name: Build iOS IPA
         script: |
-          echo "🏗️ Building IPA..."
+          echo "🏗️ Building IPA with Codemagic tool..."
           set -e
           cd ios/App
           pod install || true
           cd ../..
-          xcodebuild -workspace ios/App/App.xcworkspace -scheme App -configuration Release -archivePath build/App.xcarchive archive -allowProvisioningUpdates DEVELOPMENT_TEAM=6VQD37FLSQ CODE_SIGN_STYLE=Automatic
-          mkdir -p build/export
-          cat > build/ExportOptions.plist << 'EOF'
-          <?xml version="1.0" encoding="UTF-8"?>
-          <!DOCTYPE plist PUBLIC "-// 【entity-Apple¦canonical_name=Apple】//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
-          <plist version="1.0">
-          <dict>
-            <key>method</key>
-            <string>app-store-connect</string>
-            <key>provisioningProfiles</key>
-            <dict/>
-            <key>signingStyle</key>
-            <string>automatic</string>
-            <key>teamID</key>
-            <string>6VQD37FLSQ</string>
-          </dict>
-          </plist>
-          EOF
-          xcodebuild -exportArchive -archivePath build/App.xcarchive -exportPath build/export -exportOptionsPlist build/ExportOptions.plist -allowProvisioningUpdates
-          ls -lh build/export/
+          xcode-project build-ipa --workspace ios/App/App.xcworkspace --scheme App
+          ls -lh build/ios/ipa/ || true
+          ls -lh build/ || true
           echo "✅ IPA built"
     artifacts:
-      - build/export/*.ipa
+      - build/ios/ipa/*.ipa
+      - build/**/*.ipa
       - build/App.xcarchive
     publishing:
       app_store_connect:
