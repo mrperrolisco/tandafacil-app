@@ -70,8 +70,8 @@ workflows:
         script: |
           echo "🔑 Fetching signing files..."
           keychain initialize
-          app-store-connect fetch-signing-files com.tandafacil.app --platform IOS --type IOS_APP_STORE --create
-          app-store-connect fetch-signing-files com.tandafacil.app --platform IOS --type IOS_APP_DEVELOPMENT --create
+          keychain add-certificates
+          app-store-connect fetch-signing-files com.tandafacil.app --platform IOS --type IOS_APP_STORE
           echo "✅ Signing files fetched"
       - name: Set up code signing
         script: |
