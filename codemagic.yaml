@@ -36,9 +36,14 @@ workflows:
           echo "🏗️ Building web app..."
           set -e
           echo "Preparing web assets..."
+          mkdir -p www
           if [ -f "index-v8.html" ]; then
+            cp index-v8.html www/index.html
             cp index-v8.html index.html
+          else
+            cp index.html www/index.html
           fi
+          ls -lh www/
           echo "✅ Web assets ready"
       - name: Sync Capacitor iOS
         script: |
@@ -62,4 +67,3 @@ workflows:
     artifacts:
       - ios/App/App.xcarchive
       - ios/App/*.ipa
-    
