@@ -66,6 +66,21 @@ workflows:
           npx @capacitor/assets generate --ios
           echo "✅ App Icon generated"
           ls -lh ios/App/App/Assets.xcassets/AppIcon.appiconset/ || true
+      - name: Fetch signing files
+        script: |
+          echo "🔑 Fetching signing files..."
+          set -e
+          app-store-connect fetch-signing-files com.tandafacil.app --platform IOS --type IOS_APP_STORE --create || true
+          app-store-connect list-certificates --type IOS_DISTRIBUTION || true
+          echo "✅ Signing files fetched"
+      - name: Set up code signing
+        script: |
+          echo "🔐 Setting up code signing..."
+          set -e
+          keychain initialize || true
+          keychain add-certificates || true
+          xcode-project use-profiles || true
+          echo "✅ Code signing ready"
       - name: Build iOS IPA
         script: |
           echo "🏗️ Building IPA..."
@@ -73,7 +88,7 @@ workflows:
           cd ios/App
           pod install || true
           cd ../..
-          xcodebuild -workspace ios/App/App.xcworkspace -scheme App -configuration Release -archivePath build/App.xcarchive archive -allowProvisioningUpdates DEVELOPMENT_TEAM=1990298540 CODE_SIGN_STYLE=Automatic
+          xcodebuild -workspace ios/App/App.xcworkspace -scheme App -configuration Release -archivePath build/App.xcarchive archive DEVELOPMENT_TEAM=1990298540 CODE_SIGN_STYLE=Automatic
           mkdir -p build/export
           cat > build/ExportOptions.plist << 'EOF'
           <?xml version="1.0" encoding="UTF-8"?>
@@ -91,7 +106,7 @@ workflows:
           </dict>
           </plist>
           EOF
-          xcodebuild -exportArchive -archivePath build/App.xcarchive -exportPath build/export -exportOptionsPlist build/ExportOptions.plist -allowProvisioningUpdates
+          xcodebuild -exportArchive -archivePath build/App.xcarchive -exportPath build/export -exportOptionsPlist build/ExportOptions.plist
           ls -lh build/export/
           echo "✅ IPA built"
     artifacts:
