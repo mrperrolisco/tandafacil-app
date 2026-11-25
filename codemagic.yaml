@@ -64,6 +64,35 @@ workflows:
           npx @capacitor/assets generate --ios
           echo "✅ App Icon generated"
           ls -lh ios/App/App/Assets.xcassets/AppIcon.appiconset/ || true
+      - name: Build iOS IPA
+        script: |
+          echo "🏗️ Building IPA..."
+          set -e
+          cd ios/App
+          pod install || true
+          cd ../..
+          xcodebuild -workspace ios/App/App.xcworkspace -scheme App -configuration Release -archivePath build/App.xcarchive archive -allowProvisioningUpdates
+          mkdir -p build/export
+          cat > build/ExportOptions.plist << 'EOF'
+          <?xml version="1.0" encoding="UTF-8"?>
+          <!DOCTYPE plist PUBLIC "-//【entity-Apple¦canonical_name=Apple】//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+          <plist version="1.0">
+          <dict>
+            <key>method</key>
+            <string>app-store-connect</string>
+            <key>provisioningProfiles</key>
+            <dict/>
+          </dict>
+          </plist>
+          EOF
+          xcodebuild -exportArchive -archivePath build/App.xcarchive -exportPath build/export -exportOptionsPlist build/ExportOptions.plist -allowProvisioningUpdates
+          ls -lh build/export/
+          echo "✅ IPA built"
     artifacts:
-      - ios/App/App.xcarchive
-      - ios/App/*.ipa
+      - build/export/*.ipa
+      - build/App.xcarchive
+    publishing:
+      app_store_connect:
+        auth: integration
+        submit_to_testflight: false
+        submit_to_app_store: true
