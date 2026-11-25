@@ -66,30 +66,16 @@ workflows:
           npx @capacitor/assets generate --ios
           echo "✅ App Icon generated"
           ls -lh ios/App/App/Assets.xcassets/AppIcon.appiconset/ || true
-      - name: Create certificates
-        script: |
-          echo "🔑 Creating certificates..."
-          keychain initialize
-          mkdir -p /tmp/certs
-          echo "Generating private key..."
-          openssl genrsa -out /tmp/certs/private.key 2048
-          openssl req -new -key /tmp/certs/private.key -out /tmp/certs/cert.csr -subj "/CN=TandaFacil/O=Pedro Gonzalez/C=US"
-          ls -lh /tmp/certs/
-          echo "Creating distribution certificate..."
-          app-store-connect certificates create --type IOS_DISTRIBUTION --csr /tmp/certs/cert.csr --save
-          echo "Creating development certificate..."
-          app-store-connect certificates create --type IOS_DEVELOPMENT --csr /tmp/certs/cert.csr --save
-          echo "✅ Certificates created"
       - name: Fetch signing files
         script: |
           echo "🔑 Fetching signing files..."
+          keychain initialize
           app-store-connect fetch-signing-files com.tandafacil.app --platform IOS --type IOS_APP_STORE --create
           app-store-connect fetch-signing-files com.tandafacil.app --platform IOS --type IOS_APP_DEVELOPMENT --create
           echo "✅ Signing files fetched"
       - name: Set up code signing
         script: |
           echo "🔐 Setting up code signing..."
-          keychain initialize
           keychain add-certificates
           xcode-project use-profiles
           echo "✅ Code signing ready"
