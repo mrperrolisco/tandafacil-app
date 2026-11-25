@@ -70,14 +70,12 @@ workflows:
         script: |
           echo "🔑 Fetching signing files..."
           keychain initialize
-          keychain add-certificates
-          app-store-connect fetch-signing-files com.tandafacil.app --platform IOS --type IOS_APP_STORE
+          keychain add-certificates --certificate "TandaFacil Distribution"
           echo "✅ Signing files fetched"
       - name: Set up code signing
         script: |
           echo "🔐 Setting up code signing..."
-          keychain add-certificates
-          xcode-project use-profiles
+          xcode-project use-profiles --profile "TandaFacil Profile"
           echo "✅ Code signing ready"
       - name: Build iOS IPA
         script: |
@@ -87,8 +85,7 @@ workflows:
           pod install || true
           cd ../..
           echo "🔐 Re-applying profiles after pod install..."
-          keychain add-certificates || true
-          xcode-project use-profiles || true
+          xcode-project use-profiles --profile "TandaFacil Profile" || true
           xcode-project build-ipa --workspace ios/App/App.xcworkspace --scheme App
           ls -lh build/ios/ipa/ || true
           ls -lh build/ || true
