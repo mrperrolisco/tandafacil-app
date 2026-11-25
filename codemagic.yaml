@@ -70,8 +70,15 @@ workflows:
         script: |
           echo "🔑 Creating certificates..."
           keychain initialize
-          app-store-connect certificates create --type IOS_DISTRIBUTION --save
-          app-store-connect certificates create --type IOS_DEVELOPMENT --save
+          mkdir -p /tmp/certs
+          echo "Generating private key..."
+          openssl genrsa -out /tmp/certs/private.key 2048
+          openssl req -new -key /tmp/certs/private.key -out /tmp/certs/cert.csr -subj "/CN=TandaFacil/O=Pedro Gonzalez/C=US"
+          ls -lh /tmp/certs/
+          echo "Creating distribution certificate..."
+          app-store-connect certificates create --type IOS_DISTRIBUTION --csr /tmp/certs/cert.csr --save
+          echo "Creating development certificate..."
+          app-store-connect certificates create --type IOS_DEVELOPMENT --csr /tmp/certs/cert.csr --save
           echo "✅ Certificates created"
       - name: Fetch signing files
         script: |
