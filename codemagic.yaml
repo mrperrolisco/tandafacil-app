@@ -92,6 +92,9 @@ workflows:
           cd ios/App
           pod install || true
           cd ../..
+          echo "🔐 Re-applying profiles after pod install..."
+          keychain add-certificates || true
+          xcode-project use-profiles || true
           xcode-project build-ipa --workspace ios/App/App.xcworkspace --scheme App
           ls -lh build/ios/ipa/ || true
           ls -lh build/ || true
