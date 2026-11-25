@@ -66,13 +66,17 @@ workflows:
           npx @capacitor/assets generate --ios
           echo "✅ App Icon generated"
           ls -lh ios/App/App/Assets.xcassets/AppIcon.appiconset/ || true
+      - name: Create certificates
+        script: |
+          echo "🔑 Creating certificates..."
+          app-store-connect certificates create --type IOS_DISTRIBUTION --save || true
+          app-store-connect certificates create --type IOS_DEVELOPMENT --save || true
+          echo "✅ Certificates created"
       - name: Fetch signing files
         script: |
           echo "🔑 Fetching signing files..."
           app-store-connect fetch-signing-files com.tandafacil.app --platform IOS --type IOS_APP_STORE --create
           app-store-connect fetch-signing-files com.tandafacil.app --platform IOS --type IOS_APP_DEVELOPMENT --create
-          app-store-connect list-certificates --type IOS_DISTRIBUTION
-          app-store-connect list-certificates --type IOS_DEVELOPMENT
           echo "✅ Signing files fetched"
       - name: Set up code signing
         script: |
