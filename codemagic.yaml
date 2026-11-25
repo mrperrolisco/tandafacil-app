@@ -7,7 +7,7 @@ workflows:
     instance_type: mac_mini_m1
     environment:
       ios_signing:
-        distribution_type: app_store_connect
+        distribution_type: app_store
         bundle_identifier: com.tandafacil.app
       node: 20
       xcode: latest
