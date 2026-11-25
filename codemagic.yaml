@@ -70,9 +70,7 @@ workflows:
         script: |
           echo "🔑 Fetching signing files..."
           app-store-connect fetch-signing-files com.tandafacil.app --platform IOS --type IOS_APP_STORE --create
-          app-store-connect fetch-signing-files com.tandafacil.app --platform IOS --type IOS_APP_DEVELOPMENT --create
           app-store-connect list-certificates --type IOS_DISTRIBUTION
-          app-store-connect list-certificates --type IOS_DEVELOPMENT
           echo "✅ Signing files fetched"
       - name: Set up code signing
         script: |
@@ -88,25 +86,28 @@ workflows:
           cd ios/App
           pod install || true
           cd ../..
-          xcodebuild -workspace ios/App/App.xcworkspace -scheme App -configuration Release -archivePath build/App.xcarchive archive -allowProvisioningUpdates DEVELOPMENT_TEAM=6VQD37FLSQ CODE_SIGN_STYLE=Automatic
+          xcodebuild -workspace ios/App/App.xcworkspace -scheme App -configuration Release -archivePath build/App.xcarchive archive DEVELOPMENT_TEAM=6VQD37FLSQ CODE_SIGN_STYLE=Manual CODE_SIGN_IDENTITY="【entity-Apple¦canonical_name=Apple】 Distribution" PROVISIONING_PROFILE_SPECIFIER="TandaFacil Profile"
           mkdir -p build/export
           cat > build/ExportOptions.plist << 'EOF'
           <?xml version="1.0" encoding="UTF-8"?>
-          <!DOCTYPE plist PUBLIC "-// Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+          <!DOCTYPE plist PUBLIC "-// 【entity-Apple¦canonical_name=Apple】//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
           <plist version="1.0">
           <dict>
             <key>method</key>
             <string>app-store-connect</string>
             <key>provisioningProfiles</key>
-            <dict/>
+            <dict>
+              <key>com.tandafacil.app</key>
+              <string>TandaFacil Profile</string>
+            </dict>
             <key>signingStyle</key>
-            <string>automatic</string>
+            <string>manual</string>
             <key>teamID</key>
             <string>6VQD37FLSQ</string>
           </dict>
           </plist>
           EOF
-          xcodebuild -exportArchive -archivePath build/App.xcarchive -exportPath build/export -exportOptionsPlist build/ExportOptions.plist -allowProvisioningUpdates
+          xcodebuild -exportArchive -archivePath build/App.xcarchive -exportPath build/export -exportOptionsPlist build/ExportOptions.plist
           ls -lh build/export/
           echo "✅ IPA built"
     artifacts:
