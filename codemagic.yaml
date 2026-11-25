@@ -1,22 +1,19 @@
+# TandaFacil iOS - Codemagic workflow
+name: TandaFacil-iOS
 workflows:
-  tandafacil-ios:
-    name: TandaFacil iOS
-    max_build_duration: 120
-    instance_type: mac_mini_m2
-    integrations:
-      app_store_connect: Codemagic2
+  ios-workflow:
+    name: iOS Workflow
+    max_build_duration: 60
+    instance_type: mac_mini_m1
     environment:
-      groups:
-        - tandafacil
+      node: 20
+      xcode: latest
+      cocoapods: default
       vars:
         XCODE_WORKSPACE: "ios/App/App.xcworkspace"
         XCODE_SCHEME: "App"
+        APP_STORE_APP_ID: 6829997212
         BUNDLE_ID: "com.tandafacil.app"
-        APPLE_TEAM_ID: "6VQD37FLSQ"
-        APP_NAME: "TandaFacil"
-      ios_signing:
-        distribution_type: app_store
-        bundle_identifier: com.tandafacil.app
     triggering:
       events:
         - push
@@ -25,80 +22,51 @@ workflows:
           include: true
           source: true
     scripts:
-      - name: Set up Node
+      - name: Setup & Build Dependencies
         script: |
-          node --version
-          npm --version
-      - name: Install dependencies
-        script: |
+          echo "📦 Setting up build environment..."
+          set -e
+          node -v
+          npm -v
+          echo "Installing dependencies..."
           npm install
-      - name: Build web
+          echo "✅ Dependencies installed"
+      - name: Build Web App
         script: |
-          mkdir -p www
-          cp index-v8.html www/index.html
-          ls -lh www/index.html
+          echo "🏗️ Building web app..."
+          set -e
+          echo "Preparing web assets..."
+          if [ -f "index-v8.html" ]; then
+            cp index-v8.html index.html
+          fi
+          echo "✅ Web assets ready"
       - name: Sync Capacitor iOS
         script: |
-          rm -f capacitor.config.ts capacitor.config.js capacitor.config.cjs
-          if [ ! -f capacitor.config.json ]; then
-            printf '{\n  "appId": "com.tandafacil.app",\n  "appName": "TandaFacil",\n  "webDir": "www"\n}\n' > capacitor.config.json
-          fi
-          cat capacitor.config.json
-          if [ ! -d ios ]; then
-            npx cap add ios
-          fi
+          echo "📱 Syncing iOS project..."
+          set -e
+          npm install -g @capacitor/cli@latest || npm install @capacitor/cli@latest
+          npx cap add ios || echo "iOS already exists"
           npx cap sync ios
-      - name: Force manual signing
+          echo "✅ iOS synced"
+      - name: Generate App Icon from custom icon
         script: |
-          python3 << 'PY'
-          import pathlib, re
-          p = pathlib.Path("ios/App/App.xcodeproj/project.pbxproj")
-          t = p.read_text()
-          t = t.replace("CODE_SIGN_STYLE = Automatic;", "CODE_SIGN_STYLE = Manual;")
-          t = re.sub(r'DEVELOPMENT_TEAM = "[^"]*";', 'DEVELOPMENT_TEAM = 6VQD37FLSQ;', t)
-          if "DEVELOPMENT_TEAM = 6VQD37FLSQ;" not in t:
-              t = t.replace("CODE_SIGN_STYLE = Manual;", "CODE_SIGN_STYLE = Manual;\n\t\t\t\tDEVELOPMENT_TEAM = 6VQD37FLSQ;")
-          p.write_text(t)
-          print("--- CHECK ---")
-          for line in t.splitlines():
-              if "CODE_SIGN_STYLE" in line or "DEVELOPMENT_TEAM" in line:
-                  print(line.strip())
-          PY
-      - name: Set export compliance
-        script: |
-          python3 << 'PY'
-          import plistlib, pathlib
-          for f in ["ios/App/App/Info.plist"]:
-              p = pathlib.Path(f)
-              d = plistlib.load(open(p, 'rb'))
-              d['ITSAppUsesNonExemptEncryption'] = False
-              plistlib.dump(d, open(p, 'wb'))
-              print(f, "ITSAppUsesNonExemptEncryption =", d['ITSAppUsesNonExemptEncryption'])
-          PY
-      - name: Set up code signing
-        script: |
-          keychain initialize
-          keychain add-certificates
-          xcode-project use-profiles
-          echo "--- PROFILES BAJADOS ---"
-          ls -lh ~/Library/MobileDevice/Provisioning\ Profiles/ || echo "NO HAY CARPETA DE PERFILES"
-          echo "--- CHECK PBX DESPUES DE USE-PROFILES ---"
-          grep -n "PROVISIONING_PROFILE\|CODE_SIGN_STYLE\|DEVELOPMENT_TEAM" ios/App/App.xcodeproj/project.pbxproj | head -30 || true
-      - name: Set build version
-        script: |
-          cd ios/App
-          agvtool new-version -all $PROJECT_BUILD_NUMBER
-          cd ../..
-      - name: Build IPA
-        script: |
-          xcode-project build-ipa \
-            --workspace "$XCODE_WORKSPACE" \
-            --scheme "$XCODE_SCHEME" \
-            --config Release
+          echo "🎨 Generating App Icon from TandaFacil_Icono_1024.png..."
+          set -e
+          mkdir -p resources
+          cp TandaFacil_Icono_1024.png resources/icon.png
+          cp TandaFacil_Icono_1024.png resources/splash.png
+          npm install -D @capacitor/assets || true
+          npx @capacitor/assets generate --ios
+          echo "✅ App Icon generated"
+          ls -lh ios/App/App/Assets.xcassets/AppIcon.appiconset/ || true
     artifacts:
-      - build/ios/ipa/*.ipa
-      - /tmp/*.log
+      - ios/App/App.xcarchive
+      - ios/App/*.ipa
     publishing:
       app_store_connect:
         auth: integration
-        submit_to_testflight: true
+        api_key: $APP_STORE_CONNECT_API_KEY
+        key_id: $APP_STORE_CONNECT_KEY_ID
+        issuer_id: $APP_STORE_CONNECT_ISSUER_ID
+        submit_to_testflight: false
+        submit_to_app_store: true
