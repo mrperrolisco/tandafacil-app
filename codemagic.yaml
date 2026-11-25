@@ -76,7 +76,7 @@ workflows:
           cd ios/App
           pod install || true
           cd ../..
-          xcodebuild -workspace ios/App/App.xcworkspace -scheme App -configuration Release -archivePath build/App.xcarchive archive -allowProvisioningUpdates DEVELOPMENT_TEAM=1990298540 CODE_SIGN_STYLE=Automatic
+          xcodebuild -workspace ios/App/App.xcworkspace -scheme App -configuration Release -archivePath build/App.xcarchive archive -allowProvisioningUpdates DEVELOPMENT_TEAM=6VQD37FLSQ CODE_SIGN_STYLE=Automatic
           mkdir -p build/export
           cat > build/ExportOptions.plist << 'EOF'
           <?xml version="1.0" encoding="UTF-8"?>
@@ -90,7 +90,7 @@ workflows:
             <key>signingStyle</key>
             <string>automatic</string>
             <key>teamID</key>
-            <string>1990298540</string>
+            <string>6VQD37FLSQ</string>
           </dict>
           </plist>
           EOF
