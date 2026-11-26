@@ -66,6 +66,18 @@ workflows:
           npx @capacitor/assets generate --ios
           echo "✅ App Icon generated"
           ls -lh ios/App/App/Assets.xcassets/AppIcon.appiconset/ || true
+      - name: Fetch signing files
+        script: |
+          echo "🔑 Fetching signing files..."
+          keychain initialize
+          app-store-connect fetch-signing-files com.tandafacil.app --platform IOS --type IOS_APP_STORE || true
+          echo "✅ Signing files fetched"
+      - name: Set up code signing
+        script: |
+          echo "🔐 Setting up code signing..."
+          keychain add-certificates || true
+          xcode-project use-profiles
+          echo "✅ Code signing ready"
       - name: Build iOS IPA
         script: |
           echo "🏗️ Building IPA with Codemagic tool..."
@@ -73,6 +85,8 @@ workflows:
           cd ios/App
           pod install || true
           cd ../..
+          echo "🔐 Re-applying profiles after pod install..."
+          xcode-project use-profiles || true
           xcode-project build-ipa --workspace ios/App/App.xcworkspace --scheme App
           ls -lh build/ios/ipa/ || true
           ls -lh build/ || true
