@@ -9,6 +9,9 @@ workflows:
       node: 20
       xcode: latest
       cocoapods: default
+      ios_signing:
+        distribution_type: app_store
+        bundle_identifier: com.tandafacil.app
       vars:
         XCODE_WORKSPACE: "ios/App/App.xcworkspace"
         XCODE_SCHEME: "App"
@@ -76,7 +79,7 @@ workflows:
           cp "TandaFacil_Profile 3.mobileprovision" ~/Library/MobileDevice/Profiles/ || true
           cp "TandaFacil_Profile 3.mobileprovision" ~/Library/Developer/Profiles/ || true
           ls -lh ~/Library/MobileDevice/Profiles/ || true
-          keychain add-certificates --certificate "TandaFacil Distribution 2" || true
+          keychain add-certificates || true
           xcode-project use-profiles
           echo "✅ Code signing ready"
       - name: Build iOS IPA
