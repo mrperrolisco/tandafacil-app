@@ -58,6 +58,15 @@ workflows:
           npx cap add ios || echo "iOS already exists"
           npx cap sync ios
           echo "✅ iOS synced"
+      - name: Bump build number higher than 192
+        script: |
+          echo "🔢 Bumping build number..."
+          NEW_VERSION=$((200 + BUILD_NUMBER))
+          echo "New build number: $NEW_VERSION"
+          sed -i '' "s/CURRENT_PROJECT_VERSION = [0-9]*/CURRENT_PROJECT_VERSION = $NEW_VERSION/g" ios/App/App.xcodeproj/project.pbxproj || true
+          /usr/libexec/PlistBuddy -c "Set :CFBundleVersion $NEW_VERSION" ios/App/App/Info.plist || true
+          grep -r "CURRENT_PROJECT_VERSION" ios/App/App.xcodeproj/project.pbxproj || true
+          echo "✅ Build number bumped to $NEW_VERSION"
       - name: Generate App Icon from custom icon
         script: |
           echo "🎨 Generating App Icon from TandaFacil_Icono_1024.png..."
