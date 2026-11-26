@@ -1,0 +1,105 @@
+# TandaFacil iOS - Codemagic workflow
+name: TandaFacil-iOS
+workflows:
+  ios-workflow:
+    name: iOS Workflow
+    max_build_duration: 60
+    instance_type: mac_mini_m1
+    environment:
+      node: 20
+      xcode: latest
+      cocoapods: default
+      vars:
+        XCODE_WORKSPACE: "ios/App/App.xcworkspace"
+        XCODE_SCHEME: "App"
+        APP_STORE_APP_ID: 6829997212
+        BUNDLE_ID: "com.tandafacil.app"
+    integrations:
+      app_store_connect: Codemagic3
+    triggering:
+      events:
+        - push
+      branch_patterns:
+        - pattern: main
+          include: true
+          source: true
+    scripts:
+      - name: Setup & Build Dependencies
+        script: |
+          echo "📦 Setting up build environment..."
+          set -e
+          node -v
+          npm -v
+          echo "Installing dependencies..."
+          npm install
+          echo "✅ Dependencies installed"
+      - name: Build Web App
+        script: |
+          echo "🏗️ Building web app..."
+          set -e
+          echo "Preparing web assets..."
+          mkdir -p www
+          if [ -f "index-v8.html" ]; then
+            cp index-v8.html www/index.html
+            cp index-v8.html index.html
+          else
+            cp index.html www/index.html
+          fi
+          ls -lh www/
+          echo "✅ Web assets ready"
+      - name: Sync Capacitor iOS
+        script: |
+          echo "📱 Syncing iOS project..."
+          set -e
+          npm install -g @capacitor/cli@latest || npm install @capacitor/cli@latest
+          npx cap add ios || echo "iOS already exists"
+          npx cap sync ios
+          echo "✅ iOS synced"
+      - name: Generate App Icon from custom icon
+        script: |
+          echo "🎨 Generating App Icon from TandaFacil_Icono_1024.png..."
+          set -e
+          mkdir -p resources
+          cp TandaFacil_Icono_1024.png resources/icon.png
+          cp TandaFacil_Icono_1024.png resources/splash.png
+          npm install -D @capacitor/assets || true
+          npx @capacitor/assets generate --ios
+          echo "✅ App Icon generated"
+          ls -lh ios/App/App/Assets.xcassets/AppIcon.appiconset/ || true
+      - name: Set up code signing
+        script: |
+          echo "🔐 Setting up code signing..."
+          keychain initialize
+          ls -lh *.mobileprovision || true
+          mkdir -p ~/Library/MobileDevice/Profiles
+          mkdir -p ~/Library/Developer/Profiles
+          cp "TandaFacil_Profile 3.mobileprovision" ~/Library/MobileDevice/Profiles/ || true
+          cp "TandaFacil_Profile 3.mobileprovision" ~/Library/Developer/Profiles/ || true
+          ls -lh ~/Library/MobileDevice/Profiles/ || true
+          keychain add-certificates || true
+          xcode-project use-profiles
+          echo "✅ Code signing ready"
+      - name: Build iOS IPA
+        script: |
+          echo "🏗️ Building IPA with Codemagic tool..."
+          set -e
+          cd ios/App
+          pod install || true
+          cd ../..
+          echo "🔐 Re-applying profiles after pod install..."
+          cp "TandaFacil_Profile 3.mobileprovision" ~/Library/MobileDevice/Profiles/ || true
+          cp "TandaFacil_Profile 3.mobileprovision" ~/Library/Developer/Profiles/ || true
+          xcode-project use-profiles || true
+          xcode-project build-ipa --workspace ios/App/App.xcworkspace --scheme App
+          ls -lh build/ios/ipa/ || true
+          ls -lh build/ || true
+          echo "✅ IPA built"
+    artifacts:
+      - build/ios/ipa/*.ipa
+      - build/**/*.ipa
+      - build/App.xcarchive
+    publishing:
+      app_store_connect:
+        auth: integration
+        submit_to_testflight: false
+        submit_to_app_store: true
